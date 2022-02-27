@@ -1,0 +1,12 @@
+local player = game:GetService("Players").LocalPlayer;
+for i,v in pairs(player.Character:GetDescendants()) do
+    if v.Name == "GunStates" then
+        local module = require(v);
+        module.MaxAmmo = 99999999;
+        module.CurrentAmmo = 99999999;
+        module.StoredAmmo = 99999999;
+        module.Spread = 10;
+        module.ReloadTime = 0.1;
+        module.Damage = 99999999;
+    end
+end
