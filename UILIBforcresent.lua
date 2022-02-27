@@ -46,7 +46,7 @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@%+-.                                         :%@@@@@@@@@@@@@@              ~ @Ic0u
 --]]
 local ui_options = {
-	main_color = Color3.fromRGB(170, 5, 5),
+	main_color = Color3.fromRGB(35, 35, 35),
 	min_size = Vector2.new(350, 400),
 	toggle_key = Enum.KeyCode.LeftAlt,
 	can_resize = true,
