@@ -47,7 +47,7 @@
 --]]
 local ui_options = {
 	main_color = Color3.fromRGB(170, 5, 5),
-	min_size = Vector2.new(250, 300),
+	min_size = Vector2.new(350, 400),
 	toggle_key = Enum.KeyCode.LeftAlt,
 	can_resize = true,
 }
