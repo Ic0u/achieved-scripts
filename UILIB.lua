@@ -46,16 +46,11 @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@%+-.                                         :%@@@@@@@@@@@@@@              ~ @Ic0u
 --]]
 local ui_options = {
-	main_color = Color3.fromRGB(35, 35, 35),
-	min_size = Vector2.new(300, 350),
-	toggle_key = Enum.KeyCode.RightShift,
+	main_color = Color3.fromRGB(170, 5, 5),
+	min_size = Vector2.new(250, 300),
+	toggle_key = Enum.KeyCode.LeftAlt,
 	can_resize = true,
 }
-
-do
-	local imgui = game:GetService("CoreGui"):FindFirstChild("imgui")
-	if imgui then imgui:Destroy() end
-end
 
 local imgui = Instance.new("ScreenGui")
 local Prefabs = Instance.new("Frame")
@@ -964,7 +959,7 @@ local function ripple(button, x, y)
 end
 
 local windows = 0
-local library = {}
+library = {}
 
 local function format_windows()
 	local ull = Prefabs:FindFirstChild("UIListLayout"):Clone()
