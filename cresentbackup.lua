@@ -1,7 +1,3 @@
---[[   
-                                                         Created by Ic0u !
-                                                       skids from uwuware by fla
---]]
 local library = {flags = {}, windows = {}, open = true}
 
 --Services
