@@ -1,6 +1,6 @@
 --[[   
                                                          Created by Ic0u !
-                                                       skids from uwuware by fla
+                                                       skids from uwuware by jans
 --]]
 local library = {flags = {}, windows = {}, open = true}
 
