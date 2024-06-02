@@ -5,8 +5,8 @@ import net.minecraft.util.MovingObjectPosition;
 // bad anticheat , bad optimization from vietnam with lov
 
 /**
- * @author Alan
- * @since 03.07.2022
+ * @author Nam_Nguyen
+ * @since 02.06.2022
  */
 public class GrimFlight extends Mode<Flight> {
 
