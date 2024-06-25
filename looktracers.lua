@@ -7,9 +7,9 @@ local Settings = {
     AutoThickness = true, -- Makes Thickness above futile, scales according to distance, good for less encumbered screen
     Length = 15, -- In studs of the line
     Smoothness = 0.2 -- 0.01 - Less Smooth(Faster), 1 - Smoother (Slower)
+    toggle = false,
 }
 
-local toggle = false -- use this variable if you wanna integrate into a GUI
 
 local player = game:GetService("Players").LocalPlayer
 local camera = game:GetService("Workspace").CurrentCamera
