@@ -98,7 +98,7 @@ pcall(function()
 end)
 
 local NewInstance = Instance.new("ScreenGui")
-NewInstance.Name = "剥F$35DesWFDäöAS7ZÄ6者"
+NewInstance.Name = "剥F$35DesWF🔭DäöAS7ZÄ6者"
 
 if gethui then
 	NewInstance.Parent = gethui()
@@ -112,7 +112,7 @@ end
 getgenv().OldInstance = NewInstance
 
 function Library:Window(Title, Func, Options)
-    Title = CheckType(Title, "string", "剥F$35DesWFDäöAS7ZÄ6者")
+    Title = CheckType(Title, "string", "剥F$35DesWF🔭DäöAS7ZÄ6者")
     Func = CheckType(Func, "function", function() end)
 
 	Options = CheckType(Options, "table", {})
