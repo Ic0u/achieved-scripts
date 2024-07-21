@@ -214,14 +214,6 @@ function Library:Window(Title, Func, Options)
 	Cloud.ImageRectSize = Vector2.new(36, 36)
     Cloud.Parent = MainFrame
 
-    local CloudGradient = Instance.new("UIGradient")
-    CloudGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0.00, Options.Gradient.Start),
-		ColorSequenceKeypoint.new(1.00, Options.Gradient.End)
-	})
-	CloudGradient.Rotation = Options.Gradient.Rotation
-    CloudGradient.Parent = Cloud
-
     local MainTitle = Instance.new("TextLabel")
     MainTitle.Name = "Title"
 	MainTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
