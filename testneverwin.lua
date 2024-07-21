@@ -202,17 +202,25 @@ function Library:Window(Title, Func, Options)
     MainCorner.CornerRadius = UDim.new(0, 6)
     MainCorner.Parent = MainFrame
 
-    local Cloud = Instance.new("ImageButton")
+        local Cloud = Instance.new("ImageButton")
     Cloud.Name = "Cloud"
 	Cloud.AnchorPoint = Vector2.new(0.5, 0.5)
 	Cloud.BackgroundTransparency = 1
 	Cloud.Position = UDim2.new(0.093952976167202, 0, 0.09986995160579681, 0)
 	Cloud.Size = UDim2.new(0, 35, 0, 35)
 	Cloud.ZIndex = 2
-	Cloud.Image = "rbxassetid://18584865081"
+	Cloud.Image = "rbxassetid://3926305904"
 	Cloud.ImageRectOffset = Vector2.new(324, 764)
 	Cloud.ImageRectSize = Vector2.new(36, 36)
     Cloud.Parent = MainFrame
+
+    local CloudGradient = Instance.new("UIGradient")
+    CloudGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0.00, Options.Gradient.Start),
+		ColorSequenceKeypoint.new(1.00, Options.Gradient.End)
+	})
+	CloudGradient.Rotation = Options.Gradient.Rotation
+    CloudGradient.Parent = Cloud
 
     local MainTitle = Instance.new("TextLabel")
     MainTitle.Name = "Title"
