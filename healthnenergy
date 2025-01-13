@@ -56,7 +56,6 @@ function CreateEsp(Player)
                 Name.Visible = false
             end
             if Config.HealthBar then
-                HealthBarOutline.Visible = IsVisible
                 HealthBarOutline.Color = Color3.fromRGB(0,0,0)
                 HealthBarOutline.Filled = true
                 HealthBarOutline.ZIndex = 1
@@ -73,7 +72,8 @@ function CreateEsp(Player)
                     HealthBar.Size = Vector2.new(1,-(HealthBarOutline.Size.Y - 2) * (Player.Character:FindFirstChild("Humanoid").Health/Player.Character:FindFirstChild("Humanoid").MaxHealth))
                     HealthBar.Position = HealthBarOutline.Position + Vector2.new(1,-1 + HealthBarOutline.Size.Y)
                 elseif Config.HealthBarSide == "Bottom" then
-                    HealthBarOutline:Remove()
+                    HealthBarOutline.Position = Vector2.new(Target2dPosition.X - Box.Size.X / 2,Target2dPosition.Y - Box.Size.Y / 2) + Vector2.new(0,height + 2)
+
                     HealthBar.Size = Vector2.new((HealthBarOutline.Size.X - 2) * (Player.Character:FindFirstChild("Humanoid").Health/Player.Character:FindFirstChild("Humanoid").MaxHealth),1)
                     HealthBar.Position = HealthBarOutline.Position + Vector2.new(1,-1 + HealthBarOutline.Size.Y)
                 elseif Config.HealthBarSide == "Right" then
@@ -85,14 +85,14 @@ function CreateEsp(Player)
                 end
             else
                 HealthBar.Visible = false
-                HealthBarOutline.Visible = false
+                HealthBarOutline.Visible = true
             end
         else
             Box.Visible = false
             BoxOutline.Visible = false
             Name.Visible = false
             HealthBar.Visible = false
-            HealthBarOutline.Visible = false
+            HealthBarOutline.Visible = true
             if not Player then
                 Box:Remove()
                 BoxOutline:Remove()
