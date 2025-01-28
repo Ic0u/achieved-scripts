@@ -705,7 +705,7 @@ function library:Introduction()
     edge.Name = "edge"
     edge.Parent = introduction
     edge.AnchorPoint = Vector2.new(0.5, 0.5)
-    edge.BackgroundColor3 = Color3.fromRGB(50, 50, 58)
+    edge.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
     edge.BackgroundTransparency = 1
     edge.Position = UDim2.new(0.511773348, 0, 0.5, 0)
     edge.Size = UDim2.new(0, 300, 0, 308)
@@ -780,8 +780,8 @@ function library:Introduction()
     xsx.BackgroundTransparency = 1.000
     xsx.Size = UDim2.new(0, 80, 0, 21)
     xsx.Font = Enum.Font.Gotham
-    xsx.Text = "Icou on top"
-    xsx.TextColor3 = Color3.fromRGB(124, 124, 124)
+    xsx.Text = "Icou#2131"
+    xsx.TextColor3 = Color3.fromRGB(211, 211, 211)
     xsx.TextSize = 10.000
     xsx.TextTransparency = 1
     
@@ -791,9 +791,9 @@ function library:Introduction()
     text.BackgroundTransparency = 1.000
     text.Position = UDim2.new(0.912751675, 0, 0, 0)
     text.Size = UDim2.new(0, 26, 0, 21)
-    text.Font = Enum.Font.Gotham
+    text.Font = Enum.Font.GothamBold
     text.Text = "Melatonin"
-    text.TextColor3 = Color3.fromRGB(124, 124, 124)
+    text.TextColor3 = Color3.fromRGB(211, 211, 211)
     text.TextSize = 10.000
     text.TextTransparency = 1
     text.RichText = true
