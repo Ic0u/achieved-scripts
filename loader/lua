@@ -780,7 +780,7 @@ function library:Introduction()
     xsx.BackgroundTransparency = 1.000
     xsx.Size = UDim2.new(0, 80, 0, 21)
     xsx.Font = Enum.Font.Gotham
-    xsx.Text = "Icou#2131"
+    xsx.Text = "Icou"
     xsx.TextColor3 = Color3.fromRGB(211, 211, 211)
     xsx.TextSize = 10.000
     xsx.TextTransparency = 1
