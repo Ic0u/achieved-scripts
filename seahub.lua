@@ -1,13 +1,61 @@
+--[[
+    SeaUI.lua
+    ---------------------------------------------------------------------------
+    A standalone extraction of the "Feral" Roblox UI library.
 
+    This file is NOT a reimplementation. Every frame, colour, dimension, tween
+    and event handler below is the original implementation lifted out of the
+    decompiled source. Only three classes of change were made:
+
+      1. Synapse-X decompiler control-flow guards were removed
+         (`if L_506(8065) ~= 26545 then while true do end end` and friends).
+      2. Constants the decompiler lost were restored (see notes below).
+      3. Non-UI code was deleted.
+
+    Restored constants
+      L_32 -> "Frame"        proven from usage (Instance.new + Size/AnchorPoint/
+                             ZIndex, and `FindFirstChild(L_32)` followed by
+                             `.Frame` on the next line of the source).
+      L_34 -> "Text Color"   INFERRED. It is a theme-table key used only as a
+                             TextColor3 source. The original string literal is
+                             not recoverable from the decompilation. The name is
+                             used consistently, so behaviour is correct, but if
+                             you diff against another Feral build this key may
+                             have had a different label.
+      L_35 -> true           used as a truthy constant gate; restored by
+                             deleting the gate.
+      L_36 -> HasFileSystem  gated every isfile/writefile call. It was undefined
+                             in the decompilation, which silently disabled all
+                             persistence. Restored as a capability check.
+
+    Usage:
+      local SeaUI = loadstring(game:HttpGet("RAW_URL"))()
+      local Window = SeaUI.CreateMain({ Title = "My Hub", Desc = "v1.0" })
+      local Page   = Window.CreatePage({ Page_Name = "Main", Page_Title = "Main" })
+      local Sect   = Page.CreateSection("Combat", false)
+      Sect.CreateToggle({ Title = "Aimbot", Default = false }, function(v) end)
+--]]
+
+-- getgenv() is the executor global-table accessor. The original library stores
+-- the live theme in getgenv().UIColor and several UI flags alongside it; that
+-- relationship is preserved. Fall back to _G outside an executor so the file
+-- at least loads.
 local getgenv = getgenv or function() return _G end
 
-
+-- Executor filesystem capability. Original variable: L_36.
 local HasFileSystem =
     type(rawget(getfenv(0), "isfile"))     == "function" and
     type(rawget(getfenv(0), "writefile"))  == "function" and
     type(rawget(getfenv(0), "isfolder"))   == "function" and
     type(rawget(getfenv(0), "makefolder")) == "function"
 
+-- CreateToggle supports an optional `Requirements` list which renders a chip
+-- row under the toggle and greys it out until every requirement passes. In the
+-- original script the checker was wired to game-specific ability presets. The
+-- UI is preserved; the checker is left empty and pluggable so the library stays
+-- standalone. Register your own with RequirementsTracker:AddPreset(name, fn).
+-- Executor asset/request shims. The original called syn.request and
+-- getsynasset directly (Synapse X only). Same behaviour, wider support.
 local HttpRequest =
     (syn and syn.request)
     or (http and http.request)
@@ -367,6 +415,28 @@ local function BuildLibrary()
     -- to any Enum.EasingStyle / Enum.EasingDirection member NAME (a string,
     -- so it survives JSON theme persistence). Bad names fall back silently.
     -- ------------------------------------------------------------------
+    -- ------------------------------------------------------------------
+    -- Key name coercion (FIX)
+    --
+    -- CreateToggle's inline keybind stores and compares keys by
+    -- KeyCode.Name -- a plain string like "F" -- and assigns that value
+    -- straight to TextButton.Text. Passing an EnumItem (the obvious thing
+    -- to pass, and what CreateBind/CreateKeybind DO accept) threw
+    -- "string expected, got EnumItem" and killed the calling script, and
+    -- even if it had not, the keypress comparison would never have
+    -- matched. Both entry points now coerce. Strings still behave
+    -- exactly as before.
+    -- ------------------------------------------------------------------
+    Internal.KeyName = function(key)
+        if key == nil then
+            return nil;
+        end;
+        if typeof(key) == "EnumItem" then
+            return key.Name;
+        end;
+        return (tostring(key):gsub("Enum%.KeyCode%.", ""):gsub("Enum%.UserInputType%.", ""));
+    end;
+
     Internal.EasingInfo = function(duration)
         local style, direction = Enum.EasingStyle.Quad, Enum.EasingDirection.Out;
         pcall(function()
@@ -2815,7 +2885,7 @@ local function BuildLibrary()
                             local L_1157 = L_1154.Desc;
                             local L_1158 = L_1154.Default;
                             local L_1159 = L_1154.Keybind or false;
-                            local L_1160 = L_1154.DefaultKey or nil;
+                            local L_1160 = Internal.KeyName(L_1154.DefaultKey);
                             local L_1161 = L_1154.Textbox or false;
                             local L_1162 = L_1154.TextboxPlaceholder or "Enter value...";
                             local L_1163 = L_1154.TextboxDefault or "";
@@ -3252,8 +3322,8 @@ local function BuildLibrary()
                                 end,
                                 SetKeybind = function(L_1224)
                                     if L_1159 then
-                                        L_1209 = L_1224;
-                                        L_1180.Text = L_1224 or "NONE";
+                                        L_1209 = Internal.KeyName(L_1224);
+                                        L_1180.Text = L_1209 or "NONE";
                                     end;
                                     return ;
                                 end,
