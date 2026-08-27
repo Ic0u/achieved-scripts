@@ -2929,10 +2929,23 @@ local function BuildLibrary()
                             L_1169.AutomaticSize = Enum.AutomaticSize.Y;
                             L_1170.Name = "TogFrame1";
                             L_1170.Parent = L_1169;
-                            L_1170.AnchorPoint = Vector2.new(0.5, 0.5);
+                            -- LAYOUT FIX (see README "Row height"):
+                            -- the parent row L_1169 uses AutomaticSize.Y, and Roblox
+                            -- excludes descendants that use Scale on the measured axis.
+                            -- L_1170 was AnchorPoint(0.5,0.5) at Position(0.5,0,0.5,0)
+                            -- -- Scale on Y -- so the row measured 0 and the section's
+                            -- UIListLayout stacked every toggle at the same Y.
+                            -- Anchoring Y to the top removes the Scale term. Visually
+                            -- identical, because once the row measures correctly its
+                            -- height equals this frame's height, so centred and
+                            -- top-aligned are the same position.
+                            -- To restore the original values:
+                            --   AnchorPoint = Vector2.new(0.5, 0.5)
+                            --   Position    = UDim2.new(0.5, 0, 0.5, 0)
+                            L_1170.AnchorPoint = Vector2.new(0.5, 0);
                             L_1170.BackgroundColor3 = Color3.fromRGB(230, 230, 230);
                             L_1170.BackgroundTransparency = 1;
-                            L_1170.Position = UDim2.new(0.5, 0, 0.5, 0);
+                            L_1170.Position = UDim2.new(0.5, 0, 0, 0);
                             L_1170.Size = UDim2.new(1, -10, 0, 0);
                             L_1170.AutomaticSize = Enum.AutomaticSize.Y;
                             L_1171.Name = "checkbox";
@@ -4802,7 +4815,7 @@ local function BuildLibrary()
         return getgenv().UIColor["Logo Image"];
     end;
 
-    SeaUI.VERSION = "1.4.0";
+    SeaUI.VERSION = "1.5.0";
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
