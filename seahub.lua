@@ -1,61 +1,13 @@
---[[
-    SeaUI.lua
-    ---------------------------------------------------------------------------
-    A standalone extraction of the "Feral" Roblox UI library.
 
-    This file is NOT a reimplementation. Every frame, colour, dimension, tween
-    and event handler below is the original implementation lifted out of the
-    decompiled source. Only three classes of change were made:
-
-      1. Synapse-X decompiler control-flow guards were removed
-         (`if L_506(8065) ~= 26545 then while true do end end` and friends).
-      2. Constants the decompiler lost were restored (see notes below).
-      3. Non-UI code was deleted.
-
-    Restored constants
-      L_32 -> "Frame"        proven from usage (Instance.new + Size/AnchorPoint/
-                             ZIndex, and `FindFirstChild(L_32)` followed by
-                             `.Frame` on the next line of the source).
-      L_34 -> "Text Color"   INFERRED. It is a theme-table key used only as a
-                             TextColor3 source. The original string literal is
-                             not recoverable from the decompilation. The name is
-                             used consistently, so behaviour is correct, but if
-                             you diff against another Feral build this key may
-                             have had a different label.
-      L_35 -> true           used as a truthy constant gate; restored by
-                             deleting the gate.
-      L_36 -> HasFileSystem  gated every isfile/writefile call. It was undefined
-                             in the decompilation, which silently disabled all
-                             persistence. Restored as a capability check.
-
-    Usage:
-      local SeaUI = loadstring(game:HttpGet("RAW_URL"))()
-      local Window = SeaUI.CreateMain({ Title = "My Hub", Desc = "v1.0" })
-      local Page   = Window.CreatePage({ Page_Name = "Main", Page_Title = "Main" })
-      local Sect   = Page.CreateSection("Combat", false)
-      Sect.CreateToggle({ Title = "Aimbot", Default = false }, function(v) end)
---]]
-
--- getgenv() is the executor global-table accessor. The original library stores
--- the live theme in getgenv().UIColor and several UI flags alongside it; that
--- relationship is preserved. Fall back to _G outside an executor so the file
--- at least loads.
 local getgenv = getgenv or function() return _G end
 
--- Executor filesystem capability. Original variable: L_36.
+
 local HasFileSystem =
     type(rawget(getfenv(0), "isfile"))     == "function" and
     type(rawget(getfenv(0), "writefile"))  == "function" and
     type(rawget(getfenv(0), "isfolder"))   == "function" and
     type(rawget(getfenv(0), "makefolder")) == "function"
 
--- CreateToggle supports an optional `Requirements` list which renders a chip
--- row under the toggle and greys it out until every requirement passes. In the
--- original script the checker was wired to game-specific ability presets. The
--- UI is preserved; the checker is left empty and pluggable so the library stays
--- standalone. Register your own with RequirementsTracker:AddPreset(name, fn).
--- Executor asset/request shims. The original called syn.request and
--- getsynasset directly (Synapse X only). Same behaviour, wider support.
 local HttpRequest =
     (syn and syn.request)
     or (http and http.request)
@@ -90,8 +42,8 @@ local function BuildLibrary()
     end;
     getgenv().Tvk = true;
     getgenv().Chon = true;
-    local ThemeDefaultLight = { ["Border Color"] = Color3.fromRGB(131, 181, 255), ["Click Effect Color"] = Color3.fromRGB(230, 230, 230), ["Setting Icon Color"] = Color3.fromRGB(230, 230, 230), ["Logo Image"] = "rbxassetid://6248942117", ["Search Icon Color"] = Color3.fromRGB(255, 255, 255), ["Search Icon Highlight Color"] = Color3.fromRGB(131, 181, 255), ["GUI Text Color"] = Color3.fromRGB(230, 230, 230), ["Text Color"] = Color3.fromRGB(230, 230, 230), ["Placeholder Text Color"] = Color3.fromRGB(178, 178, 178), ["Title Text Color"] = Color3.fromRGB(131, 181, 255), ["Background 1 Color"] = Color3.fromRGB(43, 43, 43), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(90, 90, 90), ["Background 3 Color"] = Color3.fromRGB(53, 53, 53), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(131, 181, 255), ["Section Text Color"] = Color3.fromRGB(131, 181, 255), ["Section Underline Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Border Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Checked Color"] = Color3.fromRGB(230, 230, 230), ["Toggle Desc Color"] = Color3.fromRGB(185, 185, 185), ["Button Color"] = Color3.fromRGB(131, 181, 255), ["Label Color"] = Color3.fromRGB(101, 152, 220), ["Dropdown Icon Color"] = Color3.fromRGB(230, 230, 230), ["Dropdown Selected Color"] = Color3.fromRGB(131, 181, 255), ["Textbox Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Box Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Slider Line Color"] = Color3.fromRGB(75, 75, 75), ["Slider Highlight Color"] = Color3.fromRGB(59, 82, 115), ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
-    local ThemeDefaultDark = { ["Border Color"] = Color3.fromRGB(40, 40, 40), ["Click Effect Color"] = Color3.fromRGB(60, 60, 60), ["Setting Icon Color"] = Color3.fromRGB(200, 200, 200), ["Logo Image"] = "rbxassetid://9327507243", ["Search Icon Color"] = Color3.fromRGB(200, 200, 200), ["Search Icon Highlight Color"] = Color3.fromRGB(90, 160, 255), ["GUI Text Color"] = Color3.fromRGB(220, 220, 220), ["Text Color"] = Color3.fromRGB(220, 220, 220), ["Placeholder Text Color"] = Color3.fromRGB(150, 150, 150), ["Title Text Color"] = Color3.fromRGB(90, 160, 255), ["Background Main Color"] = Color3.fromRGB(20, 20, 20), ["Background 1 Color"] = Color3.fromRGB(30, 30, 30), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(45, 45, 45), ["Background 3 Color"] = Color3.fromRGB(25, 25, 25), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(90, 160, 255), ["Section Text Color"] = Color3.fromRGB(90, 160, 255), ["Section Underline Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Border Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Checked Color"] = Color3.fromRGB(220, 220, 220), ["Toggle Desc Color"] = Color3.fromRGB(180, 180, 180), ["Button Color"] = Color3.fromRGB(90, 160, 255), ["Label Color"] = Color3.fromRGB(90, 160, 255), ["Dropdown Icon Color"] = Color3.fromRGB(200, 200, 200), ["Dropdown Selected Color"] = Color3.fromRGB(90, 160, 255), ["Textbox Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Box Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Slider Line Color"] = Color3.fromRGB(60, 60, 60), ["Slider Highlight Color"] = Color3.fromRGB(70, 130, 200), ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
+    local ThemeDefaultLight = { ["Border Color"] = Color3.fromRGB(131, 181, 255), ["Click Effect Color"] = Color3.fromRGB(230, 230, 230), ["Setting Icon Color"] = Color3.fromRGB(230, 230, 230), ["Logo Image"] = "rbxassetid://6248942117", ["Search Icon Color"] = Color3.fromRGB(255, 255, 255), ["Search Icon Highlight Color"] = Color3.fromRGB(131, 181, 255), ["GUI Text Color"] = Color3.fromRGB(230, 230, 230), ["Text Color"] = Color3.fromRGB(230, 230, 230), ["Placeholder Text Color"] = Color3.fromRGB(178, 178, 178), ["Title Text Color"] = Color3.fromRGB(131, 181, 255), ["Background 1 Color"] = Color3.fromRGB(43, 43, 43), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(90, 90, 90), ["Background 3 Color"] = Color3.fromRGB(53, 53, 53), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(131, 181, 255), ["Section Text Color"] = Color3.fromRGB(131, 181, 255), ["Section Underline Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Border Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Checked Color"] = Color3.fromRGB(230, 230, 230), ["Toggle Desc Color"] = Color3.fromRGB(185, 185, 185), ["Button Color"] = Color3.fromRGB(131, 181, 255), ["Label Color"] = Color3.fromRGB(101, 152, 220), ["Dropdown Icon Color"] = Color3.fromRGB(230, 230, 230), ["Dropdown Selected Color"] = Color3.fromRGB(131, 181, 255), ["Textbox Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Box Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Slider Line Color"] = Color3.fromRGB(75, 75, 75), ["Slider Highlight Color"] = Color3.fromRGB(59, 82, 115), ["Tween Easing Style"] = "Quad", ["Tween Easing Direction"] = "Out", ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
+    local ThemeDefaultDark = { ["Border Color"] = Color3.fromRGB(40, 40, 40), ["Click Effect Color"] = Color3.fromRGB(60, 60, 60), ["Setting Icon Color"] = Color3.fromRGB(200, 200, 200), ["Logo Image"] = "rbxassetid://9327507243", ["Search Icon Color"] = Color3.fromRGB(200, 200, 200), ["Search Icon Highlight Color"] = Color3.fromRGB(90, 160, 255), ["GUI Text Color"] = Color3.fromRGB(220, 220, 220), ["Text Color"] = Color3.fromRGB(220, 220, 220), ["Placeholder Text Color"] = Color3.fromRGB(150, 150, 150), ["Title Text Color"] = Color3.fromRGB(90, 160, 255), ["Background Main Color"] = Color3.fromRGB(20, 20, 20), ["Background 1 Color"] = Color3.fromRGB(30, 30, 30), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(45, 45, 45), ["Background 3 Color"] = Color3.fromRGB(25, 25, 25), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(90, 160, 255), ["Section Text Color"] = Color3.fromRGB(90, 160, 255), ["Section Underline Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Border Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Checked Color"] = Color3.fromRGB(220, 220, 220), ["Toggle Desc Color"] = Color3.fromRGB(180, 180, 180), ["Button Color"] = Color3.fromRGB(90, 160, 255), ["Label Color"] = Color3.fromRGB(90, 160, 255), ["Dropdown Icon Color"] = Color3.fromRGB(200, 200, 200), ["Dropdown Selected Color"] = Color3.fromRGB(90, 160, 255), ["Textbox Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Box Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Slider Line Color"] = Color3.fromRGB(60, 60, 60), ["Slider Highlight Color"] = Color3.fromRGB(70, 130, 200), ["Tween Easing Style"] = "Quad", ["Tween Easing Direction"] = "Out", ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
     local ThemeListeners = {};
     for L_640, L_641 in pairs(ThemeDefaultDark) do
         
@@ -404,6 +356,33 @@ local function BuildLibrary()
     local Internal = {};
     local TweenService = game:GetService("TweenService");
     local UserInputService = game:GetService("UserInputService");
+
+    -- ------------------------------------------------------------------
+    -- Tween easing (ADDITION)
+    --
+    -- 29 of the 34 tweens in the original called TweenInfo.new(duration)
+    -- with no easing arguments, so they all silently took Roblox's default
+    -- of Quad/Out. Those defaults are preserved exactly -- this only makes
+    -- them overridable. Set "Tween Easing Style" / "Tween Easing Direction"
+    -- to any Enum.EasingStyle / Enum.EasingDirection member NAME (a string,
+    -- so it survives JSON theme persistence). Bad names fall back silently.
+    -- ------------------------------------------------------------------
+    Internal.EasingInfo = function(duration)
+        local style, direction = Enum.EasingStyle.Quad, Enum.EasingDirection.Out;
+        pcall(function()
+            local s = getgenv().UIColor["Tween Easing Style"];
+            if type(s) == "string" and Enum.EasingStyle[s] then
+                style = Enum.EasingStyle[s];
+            end;
+        end);
+        pcall(function()
+            local d = getgenv().UIColor["Tween Easing Direction"];
+            if type(d) == "string" and Enum.EasingDirection[d] then
+                direction = Enum.EasingDirection[d];
+            end;
+        end);
+        return TweenInfo.new(tonumber(duration) or 0.25, style, direction);
+    end;
     Internal.ButtonEffect = function()
         return ;
     end;
@@ -525,9 +504,9 @@ local function BuildLibrary()
         L_812.CornerRadius = UDim.new(1, 0);
         L_812.Name = "RuafimgCorner";
         L_812.Parent = L_811;
-        L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().TitleNameNoti;
+        L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().TitleNameNoti;
         table.insert(ThemeListeners["Title Text Color"], function()
-            L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().TitleNameNoti;
+            L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().TitleNameNoti;
             return ;
         end);
         L_813.Name = "TextLabelNoti";
@@ -595,18 +574,18 @@ local function BuildLibrary()
             end);
         end;
         local L_818 = function()
-            TweenService:Create(L_808, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Position = UDim2.new(1, 0, 0, 0) }):Play();
+            TweenService:Create(L_808, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Position = UDim2.new(1, 0, 0, 0) }):Play();
             wait(0.25);
             L_807:Destroy();
             return ;
         end;
-        TweenService:Create(L_808, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Position = UDim2.new(0, 0, 0, 0) }):Play();
+        TweenService:Create(L_808, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Position = UDim2.new(0, 0, 0, 0) }):Play();
         L_816.MouseEnter:Connect(function()
-            TweenService:Create(L_815, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Highlight Color"] }):Play();
+            TweenService:Create(L_815, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Highlight Color"] }):Play();
             return ;
         end);
         L_816.MouseLeave:Connect(function()
-            TweenService:Create(L_815, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Color"] }):Play();
+            TweenService:Create(L_815, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Color"] }):Play();
             return ;
         end);
         L_816.MouseButton1Click:Connect(function()
@@ -627,6 +606,11 @@ local function BuildLibrary()
     end;
     SeaUI.CreateMain = function(L_819)
         local L_820 = tostring(L_819.Title) or "Feral";
+        -- ADDITION: the brand word beside the logo was a hardcoded "Feral"
+        -- string literal in five places. It is now driven by this field.
+        -- Title = the sidebar header. Name = the brand. Desc = the text
+        -- printed after the brand (version string, sea name, etc).
+        getgenv().HubName = L_819.Name or getgenv().HubName or "Feral";
         getgenv().MainDesc = L_819.Desc or "";
         local L_821 = false;
         cac = false;
@@ -715,10 +699,10 @@ local function BuildLibrary()
         end);
         Internal.ReloadMain = function(L_853)
             L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().MainDesc;
+            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
             table.insert(ThemeListeners["Title Text Color"], function()
                 L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-                L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().MainDesc;
+                L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
                 return ;
             end);
             local L_854 = nil;
@@ -770,10 +754,10 @@ local function BuildLibrary()
             return ;
         end;
         L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().MainDesc;
+        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
         table.insert(ThemeListeners["Title Text Color"], function()
             L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().MainDesc;
+            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
             return ;
         end);
         local L_860 = nil;
@@ -883,9 +867,9 @@ local function BuildLibrary()
             L_838.TextColor3 = getgenv().UIColor["GUI Text Color"];
             return ;
         end);
-        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().MainDesc;
+        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
         table.insert(ThemeListeners["Title Text Color"], function()
-            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">Feral</font> " .. getgenv().MainDesc;
+            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
             return ;
         end);
         L_846.Name = "SettionMain";
@@ -1030,7 +1014,7 @@ local function BuildLibrary()
             local L_866 = L_865 and L_851 or L_850;
             local L_867 = L_865 and 180 or 0;
             L_852:JumpTo(L_866);
-            game.TweenService:Create(L_848, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Rotation = L_867 }):Play();
+            game.TweenService:Create(L_848, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Rotation = L_867 }):Play();
             return ;
         end);
         local L_868 = Instance.new("ScrollingFrame");
@@ -1142,11 +1126,11 @@ local function BuildLibrary()
         end);
         local L_877 = false;
         L_875.MouseEnter:Connect(function()
-            TweenService:Create(L_874, TweenInfo.new(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Highlight Color"] }):Play();
+            TweenService:Create(L_874, Internal.EasingInfo(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Highlight Color"] }):Play();
             return ;
         end);
         L_875.MouseLeave:Connect(function()
-            TweenService:Create(L_874, TweenInfo.new(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Color"] }):Play();
+            TweenService:Create(L_874, Internal.EasingInfo(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Color"] }):Play();
             return ;
         end);
         L_875.MouseButton1Click:Connect(function()
@@ -1160,7 +1144,7 @@ local function BuildLibrary()
         L_875.MouseButton1Click:Connect(function()
             L_877 = not L_877;
             local L_878 = L_877 and UDim2.new(0, 175, 0, 20) or UDim2.new(0, 20, 0, 20);
-            game.TweenService:Create(L_871, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_878 }):Play();
+            game.TweenService:Create(L_871, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_878 }):Play();
             return ;
         end);
         local L_881 = function()
@@ -1716,7 +1700,7 @@ local function BuildLibrary()
                             L_911.MouseButton1Click:Connect(function()
                                 L_955 = not L_955;
                                 local L_956 = L_955 and UDim2.new(1, 0, 0, 255) or UDim2.new(1, 0, 0, 35);
-                                TweenService:Create(L_904, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_956 }):Play();
+                                TweenService:Create(L_904, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_956 }):Play();
                                 return ;
                             end);
                             L_911.MouseButton1Click:Connect(function()
@@ -1849,7 +1833,7 @@ local function BuildLibrary()
                                 L_1009 = L_900.Cungroi and UDim2.new(1, -4, 1, -4) or UDim2.new(0, 0, 0, 0);
                                 L_1010 = L_900.Cungroi and UDim2.new(0.5, 0, 0.5, 0) or UDim2.new(0, 0, 1, 0);
                                 L_1011 = L_900.Cungroi and Vector2.new(0.5, 0.5) or Vector2.new(0, 1);
-                                game.TweenService:Create(L_936, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_1009, Position = L_1010, AnchorPoint = L_1011 }):Play();
+                                game.TweenService:Create(L_936, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_1009, Position = L_1010, AnchorPoint = L_1011 }):Play();
                                 L_1008(L_900.Cungroi);
                                 return ;
                             end);
@@ -1977,7 +1961,7 @@ local function BuildLibrary()
                                 local L_1029 = L_642[L_903].Breathing.Toggle and UDim2.new(1, -4, 1, -4) or UDim2.new(0, 0, 0, 0);
                                 local L_1030 = L_642[L_903].Breathing.Toggle and UDim2.new(0.5, 0, 0.5, 0) or UDim2.new(0, 0, 1, 0);
                                 local L_1031 = L_642[L_903].Breathing.Toggle and Vector2.new(0.5, 0.5) or Vector2.new(0, 1);
-                                game.TweenService:Create(L_945, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_1029, Position = L_1030, AnchorPoint = L_1031 }):Play();
+                                game.TweenService:Create(L_945, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_1029, Position = L_1030, AnchorPoint = L_1031 }):Play();
                                 if L_642[L_903].Breathing.Toggle then
                                     local L_1032 = game.TweenService:Create(L_909, TweenInfo.new(2), { BackgroundColor3 = L_1028 });
                                     local L_1033 = game.TweenService:Create(L_938, TweenInfo.new(2), { BackgroundColor3 = L_1028 });
@@ -2115,7 +2099,7 @@ local function BuildLibrary()
                                 return ;
                             end);
                             L_1049.Focused:Connect(function()
-                                TweenService:Create(L_1050, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 0 }):Play();
+                                TweenService:Create(L_1050, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 0 }):Play();
                                 return ;
                             end);
                             L_1049.Focused:Connect(function()
@@ -2123,7 +2107,7 @@ local function BuildLibrary()
                                 return ;
                             end);
                             L_1049.FocusLost:Connect(function()
-                                TweenService:Create(L_1050, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 1 }):Play();
+                                TweenService:Create(L_1050, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 1 }):Play();
                                 local L_1051 = L_1049.Text;
                                 if L_1051 ~= "" and L_1040 then
                                     getgenv().UIColor[L_1040] = L_1051;
@@ -2277,11 +2261,11 @@ local function BuildLibrary()
                                 return ;
                             end);
                             L_1070.MouseEnter:Connect(function()
-                                TweenService:Create(L_1072, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Highlight Color"] }):Play();
+                                TweenService:Create(L_1072, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Highlight Color"] }):Play();
                                 return ;
                             end);
                             L_1070.MouseLeave:Connect(function()
-                                TweenService:Create(L_1072, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Line Color"] }):Play();
+                                TweenService:Create(L_1072, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Line Color"] }):Play();
                                 return ;
                             end);
                             local L_1077 = game.Players.LocalPlayer:GetMouse();
@@ -2613,11 +2597,11 @@ local function BuildLibrary()
             end);
             local L_1124 = false;
             L_1122.MouseEnter:Connect(function()
-                TweenService:Create(L_1121, TweenInfo.new(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Highlight Color"] }):Play();
+                TweenService:Create(L_1121, Internal.EasingInfo(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Highlight Color"] }):Play();
                 return ;
             end);
             L_1122.MouseLeave:Connect(function()
-                TweenService:Create(L_1121, TweenInfo.new(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Color"] }):Play();
+                TweenService:Create(L_1121, Internal.EasingInfo(getgenv().UIColor["Tween Animation 3 Speed"]), { ImageColor3 = getgenv().UIColor["Search Icon Color"] }):Play();
                 return ;
             end);
             L_1122.MouseButton1Click:Connect(function()
@@ -2631,7 +2615,7 @@ local function BuildLibrary()
             L_1122.MouseButton1Click:Connect(function()
                 L_1124 = not L_1124;
                 local L_1125 = L_1124 and UDim2.new(0, 175, 0, 20) or UDim2.new(0, 20, 0, 20);
-                game.TweenService:Create(L_1118, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_1125 }):Play();
+                game.TweenService:Create(L_1118, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_1125 }):Play();
                 return ;
             end);
             local L_1128 = function()
@@ -3211,7 +3195,7 @@ local function BuildLibrary()
                                 local L_1212 = L_1211 and UDim2.new(1, -4, 1, -4) or UDim2.new(0, 0, 0, 0);
                                 local L_1213 = L_1211 and UDim2.new(0.5, 0, 0.5, 0) or UDim2.new(0, 0, 1, 0);
                                 local L_1214 = L_1211 and Vector2.new(0.5, 0.5) or Vector2.new(0, 1);
-                                game.TweenService:Create(L_1172, TweenInfo.new(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_1212, Position = L_1213, AnchorPoint = L_1214 }):Play();
+                                game.TweenService:Create(L_1172, Internal.EasingInfo(getgenv().UIColor["Tween Animation 1 Speed"]), { Size = L_1212, Position = L_1213, AnchorPoint = L_1214 }):Play();
                                 L_1168(L_1211);
                                 return ;
                             end;
@@ -3324,6 +3308,17 @@ local function BuildLibrary()
                                     return ;
                                 end
                             };
+                            -- STANDALONE ADDITION: the original left Get/Set only on
+                            -- ControlRegistry.Toggles, reachable solely by rebuilding the
+                            -- "page||section||title" key. Mirrored onto the handle. The
+                            -- registry entry is untouched, so config save/load is unaffected.
+                            do
+                                local reg = ControlRegistry.Toggles[L_1230];
+                                if reg then
+                                    L_1229.Get = reg.Get;
+                                    L_1229.Set = reg.Set;
+                                end;
+                            end;
                             return L_1229;
                         end,
                         CreateButton = function(L_1331, L_1332)
@@ -3819,9 +3814,9 @@ local function BuildLibrary()
                                 local L_1416 = L_1373 and UDim2.new(1, 0, 0, 170) or UDim2.new(1, 0, 0, 0);
                                 local L_1417 = L_1373 and UDim2.new(1, 0, 0, 200) or UDim2.new(1, 0, 0, 25);
                                 local L_1418 = L_1373 and 90 or 0;
-                                TweenService:Create(L_1368, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_1416 }):Play();
-                                TweenService:Create(L_1361, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_1417 }):Play();
-                                TweenService:Create(L_1366, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Rotation = L_1418 }):Play();
+                                TweenService:Create(L_1368, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_1416 }):Play();
+                                TweenService:Create(L_1361, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = L_1417 }):Play();
+                                TweenService:Create(L_1366, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Rotation = L_1418 }):Play();
                                 return ;
                             end;
                             L_1367.MouseButton1Click:Connect(function()
@@ -3857,9 +3852,9 @@ local function BuildLibrary()
                                 end,
                                 GetNewList = function(L_1423, L_1424)
                                     L_1373 = false;
-                                    TweenService:Create(L_1368, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = UDim2.new(1, 0, 0, 0) }):Play();
-                                    TweenService:Create(L_1361, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = UDim2.new(1, 0, 0, 25) }):Play();
-                                    TweenService:Create(L_1366, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { Rotation = 0 }):Play();
+                                    TweenService:Create(L_1368, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = UDim2.new(1, 0, 0, 0) }):Play();
+                                    TweenService:Create(L_1361, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = UDim2.new(1, 0, 0, 25) }):Play();
+                                    TweenService:Create(L_1366, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Rotation = 0 }):Play();
                                     if L_1353 then
                                         if L_1360(L_1424) then
                                             local L_1425 = {};
@@ -3938,6 +3933,17 @@ local function BuildLibrary()
                                         return ;
                                     end
                                 };
+                            end;
+                            -- STANDALONE ADDITION: the original left Get/Set only on
+                            -- ControlRegistry.Dropdowns, reachable solely by rebuilding the
+                            -- "page||section||title" key. Mirrored onto the handle. The
+                            -- registry entry is untouched, so config save/load is unaffected.
+                            do
+                                local reg = ControlRegistry.Dropdowns[L_1431];
+                                if reg then
+                                    L_1430.Get = reg.Get;
+                                    L_1430.Set = reg.Set;
+                                end;
                             end;
                             return L_1430;
                         end,
@@ -4175,7 +4181,7 @@ local function BuildLibrary()
                             L_1483.CornerRadius = UDim.new(1, 0);
                             L_1483.Parent = L_1482;
                             L_1481.Focused:Connect(function()
-                                TweenService:Create(L_1482, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 0 }):Play();
+                                TweenService:Create(L_1482, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 0 }):Play();
                                 return ;
                             end);
                             L_1481.Focused:Connect(function()
@@ -4192,7 +4198,7 @@ local function BuildLibrary()
                                 end);
                             end;
                             L_1481.FocusLost:Connect(function()
-                                TweenService:Create(L_1482, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 1 }):Play();
+                                TweenService:Create(L_1482, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundTransparency = 1 }):Play();
                                 if L_1481.Text ~= "" then
                                     L_1473(L_1481.Text);
                                 end;
@@ -4221,6 +4227,17 @@ local function BuildLibrary()
                                     return ;
                                 end
                             };
+                            -- STANDALONE ADDITION: the original left Get/Set only on
+                            -- ControlRegistry.Boxes, reachable solely by rebuilding the
+                            -- "page||section||title" key. Mirrored onto the handle. The
+                            -- registry entry is untouched, so config save/load is unaffected.
+                            do
+                                local reg = ControlRegistry.Boxes[L_1486];
+                                if reg then
+                                    L_1484.Get = reg.Get;
+                                    L_1484.Set = reg.Set;
+                                end;
+                            end;
                             return L_1484;
                         end,
                         CreateSlider = function(L_1488, L_1489)
@@ -4356,11 +4373,11 @@ local function BuildLibrary()
                                 return ;
                             end);
                             L_1508.MouseEnter:Connect(function()
-                                L_1497:Create(L_1510, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Highlight Color"] }):Play();
+                                L_1497:Create(L_1510, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Highlight Color"] }):Play();
                                 return ;
                             end);
                             L_1508.MouseLeave:Connect(function()
-                                L_1497:Create(L_1510, TweenInfo.new(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Line Color"] }):Play();
+                                L_1497:Create(L_1510, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Line Color"] }):Play();
                                 return ;
                             end);
                             if L_1494 then
@@ -4444,6 +4461,17 @@ local function BuildLibrary()
                                     return ;
                                 end
                             };
+                            -- STANDALONE ADDITION: the original left Get/Set only on
+                            -- ControlRegistry.Sliders, reachable solely by rebuilding the
+                            -- "page||section||title" key. Mirrored onto the handle. The
+                            -- registry entry is untouched, so config save/load is unaffected.
+                            do
+                                local reg = ControlRegistry.Sliders[L_1526];
+                                if reg then
+                                    L_1525.Get = reg.Get;
+                                    L_1525.Set = reg.Set;
+                                end;
+                            end;
                             return L_1525;
                         end,
                         CreateKeybind = function(L_1528, L_1529)
@@ -4603,6 +4631,17 @@ local function BuildLibrary()
                                     return ;
                                 end
                             };
+                            -- STANDALONE ADDITION: the original left Get/Set only on
+                            -- ControlRegistry.Keybinds, reachable solely by rebuilding the
+                            -- "page||section||title" key. Mirrored onto the handle. The
+                            -- registry entry is untouched, so config save/load is unaffected.
+                            do
+                                local reg = ControlRegistry.Keybinds[L_1548];
+                                if reg then
+                                    L_1547.Get = reg.Get;
+                                    L_1547.Set = reg.Set;
+                                end;
+                            end;
                             return L_1547;
                         end
                     };
@@ -4614,6 +4653,73 @@ local function BuildLibrary()
     -- STANDALONE ADDITION: the original kept this table private and only leaked
     -- the ScreenGui via getgenv().GUI. Exposing it gives callers a supported
     -- handle for show/hide/destroy without inventing new methods.
+    -- ------------------------------------------------------------------
+    -- Background presets (ADDITION -- not present in the original source)
+    --
+    -- The plumbing already existed: writing getgenv().UIColor["Background
+    -- Image"] and calling Internal.ReloadMain(url) swaps the backdrop. The
+    -- theme editor exposes it as a free-text URL box under "Background".
+    -- What was missing was a way to do it from code, and a named list.
+    --
+    -- Accepts rbxassetid:// ids, direct .png URLs, and .webm URLs. .webm
+    -- renders as a looping VideoFrame; everything else as an ImageLabel.
+    -- .webm and remote .png both need executor filesystem + request support.
+    -- ------------------------------------------------------------------
+    SeaUI.BackgroundPresets = {};
+
+    SeaUI.SetBackground = function(url)
+        url = tostring(url or "");
+        getgenv().UIColor["Background Image"] = url;
+        Internal.ReloadMain(url);
+        return url;
+    end;
+
+    SeaUI.AddBackgroundPreset = function(name, url)
+        SeaUI.BackgroundPresets[tostring(name)] = tostring(url or "");
+        return SeaUI.BackgroundPresets;
+    end;
+
+    SeaUI.SetBackgroundPreset = function(name)
+        local url = SeaUI.BackgroundPresets[tostring(name)];
+        if url == nil then
+            return false;
+        end;
+        SeaUI.SetBackground(url);
+        return true;
+    end;
+
+    SeaUI.GetBackgroundPresetNames = function()
+        local names = {};
+        for name in pairs(SeaUI.BackgroundPresets) do
+            table.insert(names, name);
+        end;
+        table.sort(names);
+        return names;
+    end;
+
+    SeaUI.ClearBackground = function()
+        return SeaUI.SetBackground("");
+    end;
+
+    -- Changing the name after CreateMain requires re-running the label's theme
+    -- listener, which is what rebuilds the rich-text string. Cheaper than a
+    -- full ReloadMain, which tears the whole window down.
+    SeaUI.SetName = function(name)
+        getgenv().HubName = tostring(name or "Feral");
+        for _, fn in ipairs(ThemeListeners["Title Text Color"] or {}) do
+            pcall(fn);
+        end;
+        return getgenv().HubName;
+    end;
+
+    SeaUI.SetLogo = function(image)
+        getgenv().UIColor["Logo Image"] = tostring(image or "");
+        for _, fn in ipairs(ThemeListeners["Logo Image"] or {}) do
+            pcall(fn);
+        end;
+        return getgenv().UIColor["Logo Image"];
+    end;
+
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
