@@ -3903,6 +3903,7 @@ local function BuildLibrary()
                             end;
                             local L_1430 = {
                                 rf = L_1383,
+                                -- (also carries an unused self slot; harmless either way)
                                 ClearText = function(L_1420)
                                     if not L_1353 then
                                         if L_1352 then
@@ -3920,7 +3921,18 @@ local function BuildLibrary()
                                     end;
                                     return ;
                                 end,
+                                -- FIX: this is the library's only colon-call method -- the
+                                -- original signature is (self, list), so a dot-call
+                                -- dropdown.GetNewList(t) left the list nil and the
+                                -- multi-select branch hit pairs(nil). Both conventions
+                                -- now work, and a missing list degrades to empty.
                                 GetNewList = function(L_1423, L_1424)
+                                    if L_1424 == nil and type(L_1423) == "table" then
+                                        L_1424 = L_1423;
+                                    end;
+                                    if type(L_1424) ~= "table" then
+                                        L_1424 = {};
+                                    end;
                                     L_1373 = false;
                                     TweenService:Create(L_1368, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = UDim2.new(1, 0, 0, 0) }):Play();
                                     TweenService:Create(L_1361, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { Size = UDim2.new(1, 0, 0, 25) }):Play();
@@ -4790,6 +4802,7 @@ local function BuildLibrary()
         return getgenv().UIColor["Logo Image"];
     end;
 
+    SeaUI.VERSION = "1.4.0";
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
