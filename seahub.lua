@@ -1,17 +1,7 @@
 --[[
-    FeralUI - UI ONLY
+    Sea Hub  - UI Library
 
-    Extracted from the provided deobfuscated Feral source.
-    Excluded:
-      - anti-cheat / bypass bootstrap
-      - game-specific script logic
-      - exploit hooks
-      - the Feral gameplay automation outside the UI factory
-
-    Restored:
-      - missing generic Frame class alias
-      - minimal guard stubs required by decompiler-generated branches
-      - shared control/config registries used by the UI factory
+    Extracted from Feral hub provided deobfuscated Feral source and some other gpo hubs
 ]]
 
 local HttpService = game:GetService("HttpService")
