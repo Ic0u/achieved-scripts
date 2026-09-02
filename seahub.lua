@@ -185,11 +185,11 @@ local function BuildLibrary()
     local ConfigSystem = {};
     
     local ConfigFolder = "Feral/Configs";
-    Internal.SetConfigFolder = function(path)
+    local function SetConfigFolder(path)
         ConfigFolder = tostring(path or "Feral/Configs");
         return ConfigFolder;
     end;
-    Internal.GetConfigFolder = function()
+    local function GetConfigFolder()
         return ConfigFolder;
     end;
     
@@ -4823,11 +4823,11 @@ local function BuildLibrary()
     end;
 
     SeaUI.ConfigSystem     = ConfigSystem;
-    SeaUI.SetConfigFolder  = function(path) return Internal.SetConfigFolder(path); end;
-    SeaUI.GetConfigFolder  = function() return Internal.GetConfigFolder(); end;
+    SeaUI.SetConfigFolder  = SetConfigFolder;
+    SeaUI.GetConfigFolder  = GetConfigFolder;
     SeaUI.HasFileSystem    = HasFileSystem;
 
-    SeaUI.VERSION = "1.6.0";
+    SeaUI.VERSION = "1.6.1";
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
