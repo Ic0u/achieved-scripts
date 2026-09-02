@@ -185,6 +185,13 @@ local function BuildLibrary()
     local ConfigSystem = {};
     
     local ConfigFolder = "Feral/Configs";
+    Internal.SetConfigFolder = function(path)
+        ConfigFolder = tostring(path or "Feral/Configs");
+        return ConfigFolder;
+    end;
+    Internal.GetConfigFolder = function()
+        return ConfigFolder;
+    end;
     
     local L_666 = function()
         if not isfolder("Feral") then
@@ -4815,7 +4822,12 @@ local function BuildLibrary()
         return getgenv().UIColor["Logo Image"];
     end;
 
-    SeaUI.VERSION = "1.5.0";
+    SeaUI.ConfigSystem     = ConfigSystem;
+    SeaUI.SetConfigFolder  = function(path) return Internal.SetConfigFolder(path); end;
+    SeaUI.GetConfigFolder  = function() return Internal.GetConfigFolder(); end;
+    SeaUI.HasFileSystem    = HasFileSystem;
+
+    SeaUI.VERSION = "1.6.0";
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
