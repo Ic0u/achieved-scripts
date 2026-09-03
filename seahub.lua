@@ -444,6 +444,137 @@ local function BuildLibrary()
         return (tostring(key):gsub("Enum%.KeyCode%.", ""):gsub("Enum%.UserInputType%.", ""));
     end;
 
+    -- ------------------------------------------------------------------
+    -- Fade + intro animation (ADDITION)
+    --
+    -- The original had no show/hide transition -- Gui.Enabled was flipped
+    -- instantly. These fade every visible descendant by interpolating each
+    -- one toward full transparency from ITS OWN original value, so a frame
+    -- that was already 40% transparent fades from 0.4, not from 0.
+    --
+    -- Originals are captured once per instance and never re-captured while
+    -- faded, otherwise hiding twice would record "invisible" as the real
+    -- value and the UI would never come back.
+    -- ------------------------------------------------------------------
+    local RunServiceLocal = game:GetService("RunService");
+
+    Internal.FadeCache  = {};
+    Internal.FadeAlpha  = 0;      -- 0 = fully visible, 1 = fully faded
+    Internal.FadeToken  = 0;
+
+    local function fadeProps(instance)
+        local props = nil;
+        if instance:IsA("GuiObject") then
+            props = { "BackgroundTransparency" };
+            if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
+                table.insert(props, "TextTransparency");
+                table.insert(props, "TextStrokeTransparency");
+            end;
+            if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
+                table.insert(props, "ImageTransparency");
+            end;
+            if instance:IsA("ScrollingFrame") then
+                table.insert(props, "ScrollBarImageTransparency");
+            end;
+            if instance:IsA("CanvasGroup") then
+                table.insert(props, "GroupTransparency");
+            end;
+        elseif instance:IsA("UIStroke") then
+            props = { "Transparency" };
+        elseif instance:IsA("VideoFrame") then
+            props = { "BackgroundTransparency" };
+        end;
+        return props;
+    end;
+
+    Internal.CaptureFadeState = function()
+        if not Internal.Gui then
+            return;
+        end;
+        for _, instance in ipairs(Internal.Gui:GetDescendants()) do
+            local props = fadeProps(instance);
+            if props then
+                local entry = Internal.FadeCache[instance];
+                if not entry then
+                    entry = {};
+                    Internal.FadeCache[instance] = entry;
+                end;
+                for _, prop in ipairs(props) do
+                    if entry[prop] == nil then
+                        local ok, value = pcall(function() return instance[prop]; end);
+                        if ok and type(value) == "number" then
+                            entry[prop] = value;
+                        end;
+                    end;
+                end;
+            end;
+        end;
+    end;
+
+    local function applyFade(alpha)
+        Internal.FadeAlpha = alpha;
+        for instance, props in pairs(Internal.FadeCache) do
+            if instance.Parent then
+                for prop, original in pairs(props) do
+                    pcall(function()
+                        instance[prop] = original + (1 - original) * alpha;
+                    end);
+                end;
+            else
+                Internal.FadeCache[instance] = nil;
+            end;
+        end;
+    end;
+
+    -- alpha: 0 visible, 1 invisible. Interrupts any fade already running.
+    Internal.FadeTo = function(alpha, duration)
+        duration = tonumber(duration) or 0.22;
+        if Internal.FadeAlpha == 0 then
+            Internal.CaptureFadeState();
+        end;
+        Internal.FadeToken = Internal.FadeToken + 1;
+        local token = Internal.FadeToken;
+        local from = Internal.FadeAlpha;
+
+        if duration <= 0 then
+            applyFade(alpha);
+            return;
+        end;
+
+        task.spawn(function()
+            local started = os.clock();
+            while true do
+                if Internal.FadeToken ~= token then
+                    return;
+                end;
+                local progress = math.clamp((os.clock() - started) / duration, 0, 1);
+                local eased = 1 - (1 - progress) ^ 3;   -- cubic ease-out
+                applyFade(from + (alpha - from) * eased);
+                if progress >= 1 then
+                    return;
+                end;
+                RunServiceLocal.RenderStepped:Wait();
+            end;
+        end);
+    end;
+
+    -- Scale pop on the window frame. Centre-anchored, so it grows from
+    -- the middle rather than drifting.
+    Internal.ScalePop = function(fromScale, duration)
+        local window = Internal.Window;
+        if not window then
+            return;
+        end;
+        local target = Internal.WindowSize or window.Size;
+        Internal.WindowSize = target;
+        duration = tonumber(duration) or 0.28;
+        window.Size = UDim2.new(
+            target.X.Scale * fromScale, target.X.Offset * fromScale,
+            target.Y.Scale * fromScale, target.Y.Offset * fromScale
+        );
+        TweenService:Create(window, Internal.EasingInfo(duration), { Size = target }):Play();
+    end;
+
     Internal.EasingInfo = function(duration)
         local style, direction = Enum.EasingStyle.Quad, Enum.EasingDirection.Out;
         pcall(function()
@@ -499,7 +630,14 @@ local function BuildLibrary()
         repeat
             wait();
         until getgenv().ReadyForGuiLoaded;
+        -- INTRO: capture originals while everything is still at its real
+        -- transparency, snap to invisible, enable, then fade + pop in.
+        Internal.CaptureFadeState();
+        Internal.FadeTo(1, 0);
         Internal.Gui.Enabled = true;
+        task.wait();
+        Internal.ScalePop(0.92, 0.30);
+        Internal.FadeTo(0, 0.28);
         return ;
     end);
     Internal.NotiGui = Instance.new("ScreenGui");
@@ -751,6 +889,7 @@ local function BuildLibrary()
         local L_852 = Instance.new("UIPageLayout");
         L_833.Name = "Main";
         L_833.Parent = Internal.Gui;
+        Internal.Window = L_833;
         L_833.BackgroundColor3 = Color3.fromRGB(42, 42, 42);
         L_833.BackgroundTransparency = 1;
         L_833.Position = UDim2.new(0.5, 0, 0.5, 0);
@@ -4822,12 +4961,64 @@ local function BuildLibrary()
         return getgenv().UIColor["Logo Image"];
     end;
 
+    -- Show / Hide / Toggle with a fade. Duration is optional (default 0.22s).
+    -- Gui.Enabled is only switched off AFTER the fade finishes, so the window
+    -- does not vanish mid-transition.
+    SeaUI.IsVisible = function()
+        return Internal.Gui ~= nil and Internal.Gui.Enabled and Internal.FadeAlpha < 0.5;
+    end;
+
+    SeaUI.Show = function(duration)
+        if not Internal.Gui then
+            return;
+        end;
+        Internal.Gui.Enabled = true;
+        Internal.FadeTo(0, duration);
+        return true;
+    end;
+
+    SeaUI.Hide = function(duration)
+        if not Internal.Gui then
+            return;
+        end;
+        duration = tonumber(duration) or 0.22;
+        Internal.FadeTo(1, duration);
+        local token = Internal.FadeToken;
+        task.delay(duration, function()
+            -- another fade started in the meantime; leave it alone
+            if Internal.FadeToken == token and Internal.Gui then
+                Internal.Gui.Enabled = false;
+            end;
+        end);
+        return true;
+    end;
+
+    SeaUI.Toggle = function(duration)
+        if SeaUI.IsVisible() then
+            return SeaUI.Hide(duration);
+        end;
+        return SeaUI.Show(duration);
+    end;
+
+    SeaUI.PlayIntro = function(duration)
+        if not Internal.Gui then
+            return;
+        end;
+        Internal.CaptureFadeState();
+        Internal.FadeTo(1, 0);
+        Internal.Gui.Enabled = true;
+        task.wait();
+        Internal.ScalePop(0.92, (tonumber(duration) or 0.30));
+        Internal.FadeTo(0, (tonumber(duration) or 0.28));
+        return true;
+    end;
+
     SeaUI.ConfigSystem     = ConfigSystem;
     SeaUI.SetConfigFolder  = SetConfigFolder;
     SeaUI.GetConfigFolder  = GetConfigFolder;
     SeaUI.HasFileSystem    = HasFileSystem;
 
-    SeaUI.VERSION = "1.6.1";
+    SeaUI.VERSION = "1.7.0";
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
