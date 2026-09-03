@@ -1122,7 +1122,13 @@ local function BuildLibrary()
         end);
         L_839.Name = "Background1";
         L_839.Parent = L_850;
-        L_839.Position = UDim2.new(0, 5, 0, 0);
+        -- LAYOUT FIX: this panel carries a 1.5px UIStroke (ApplyStrokeMode.Border,
+        -- drawn OUTSIDE the frame) and a Glow that overhangs its bounds. Its
+        -- parent chain has ClipsDescendants = true, and at y = 0 there was no
+        -- room above, so the top border and corners were sliced off. The parent
+        -- is 329px tall and this panel is 325px, so nudging it down 2px leaves
+        -- 2px of clearance top and bottom without changing its size.
+        L_839.Position = UDim2.new(0, 5, 0, 2);
         L_839.Size = UDim2.new(0, 180, 0, 325);
         L_839.BackgroundTransparency = getgenv().UIColor["Background 1 Transparency"];
         table.insert(ThemeListeners["Background 1 Transparency"], function()
@@ -1150,7 +1156,9 @@ local function BuildLibrary()
         L_864.AnchorPoint = Vector2.new(0.5, 0.5);
         L_864.BackgroundTransparency = 1;
         L_864.Position = UDim2.new(0.5, 0, 0.5, 0);
-        L_864.Size = UDim2.new(1, 20, 1, 20);
+        -- 10px of overhang per edge cannot fit in 2px of clearance; trimmed to
+        -- 2px per edge so the glow renders complete instead of cropped.
+        L_864.Size = UDim2.new(1, 4, 1, 4);
         L_864.ZIndex = -1;
         L_864.Image = "rbxassetid://8068653048";
         L_864.ImageColor3 = getgenv().UIColor["Border Color"];
@@ -5018,7 +5026,7 @@ local function BuildLibrary()
     SeaUI.GetConfigFolder  = GetConfigFolder;
     SeaUI.HasFileSystem    = HasFileSystem;
 
-    SeaUI.VERSION = "1.7.0";
+    SeaUI.VERSION = "1.7.1";
     SeaUI.Internal = Internal;
     return SeaUI;
 end;
