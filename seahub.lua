@@ -1,7 +1,7 @@
 --[[
-    SeaUI.lua
+    UILIbrary.lua
     ---------------------------------------------------------------------------
-    A standalone extraction of the "Feral" Roblox UI library.
+    A standalone extraction of the "Austina" Roblox UI library.
 
     This file is NOT a reimplementation. Every frame, colour, dimension, tween
     and event handler below is the original implementation lifted out of the
@@ -42,6 +42,15 @@
 -- at least loads.
 local getgenv = getgenv or function() return _G end
 
+-- Anti-detection shims.
+-- cloneref: creates a unique reference to services so that anti-cheat
+-- reference-equality checks (e.g. rawequal(ref, game:GetService(...)))
+-- cannot match our cached handles.
+-- gethui: returns a hidden UI container that is NOT a child of CoreGui,
+-- making the ScreenGui invisible to scripts scanning CoreGui:GetChildren().
+local cloneref = cloneref or function(o) return o end
+local gethui   = gethui   or function() return cloneref(game:GetService("CoreGui")) end
+
 -- Executor filesystem capability. Original variable: L_36.
 local HasFileSystem =
     type(rawget(getfenv(0), "isfile"))     == "function" and
@@ -63,6 +72,57 @@ local HttpRequest =
     or request
 local GetCustomAsset = getcustomasset or getsynasset or function(p) return "rbxasset://" .. tostring(p) end
 
+-- ---------------------------------------------------------------------------
+-- Asset caching (ANTI-DETECTION)
+--
+-- Every rbxassetid:// in the original source is a ContentProvider fingerprint.
+-- Anti-cheats call ContentProvider:GetAssetIdsLoaded() or hook PreloadAsync to
+-- see which asset IDs a script has touched.  CacheAsset downloads each asset
+-- once to the local filesystem and returns a getcustomasset path, so the
+-- Roblox CDN / ContentProvider never sees the original ID.
+-- ---------------------------------------------------------------------------
+local _AssetCache = {}
+local function CacheAsset(id)
+    if not id or id == "" then return "" end
+    if _AssetCache[id] then return _AssetCache[id] end
+
+    -- If the executor lacks filesystem support, fall through to the raw id.
+    if not HasFileSystem then
+        _AssetCache[id] = id
+        return id
+    end
+
+    local ok, result = pcall(function()
+        if not isfolder("Austina") then makefolder("Austina") end
+        if not isfolder("Austina/Assets") then makefolder("Austina/Assets") end
+
+        -- Derive a deterministic filename from the asset id.
+        local name = tostring(id):gsub("%W", "_") .. ".png"
+        local path = "Austina/Assets/" .. name
+
+        if not isfile(path) then
+            local numId = tostring(id):match("%d+")
+            if numId then
+                local url = "https://assetdelivery.roblox.com/v1/asset/?id=" .. numId
+                local response = (HttpRequest and HttpRequest({Url = url, Method = "GET"}))
+                                  or {Body = game:HttpGet(url)}
+                if response and response.Body then
+                    writefile(path, response.Body)
+                end
+            end
+        end
+
+        if isfile(path) then
+            return GetCustomAsset(path)
+        end
+        return id
+    end)
+
+    local asset = ok and result or id
+    _AssetCache[id] = asset
+    return asset
+end
+
 local RequirementsTracker = {
     UserHas = {},
     Presets = {},
@@ -75,29 +135,29 @@ function RequirementsTracker:Check(key)
 end
 function RequirementsTracker:AddPreset(key, fn) self.Presets[key] = fn end
 
-local HttpService = game:GetService("HttpService");
+local HttpService = cloneref(game:GetService("HttpService"));
 local ControlRegistry = { Toggles = {}, Sliders = {}, Dropdowns = {}, Keybinds = {}, Boxes = {} };
 local function RegistryKey(page, section, title)
     return tostring(page) .. "||" .. tostring(section) .. "||" .. tostring(title);
 end;
 local function BuildLibrary()
-    if getgenv().Tvk and game.CoreGui:FindFirstChild("Feral GUI") then
-        for L_635, L_636 in ipairs(game.CoreGui:GetChildren()) do
-            if L_636.Name == "Feral GUI" then
+    if getgenv().Tvk and gethui():FindFirstChild("Austina GUI") then
+        for L_635, L_636 in ipairs(gethui():GetChildren()) do
+            if L_636.Name == "Austina GUI" then
                 L_636:Destroy();
             end;
         end;
     end;
     getgenv().Tvk = true;
     getgenv().Chon = true;
-    local ThemeDefaultLight = { ["Border Color"] = Color3.fromRGB(131, 181, 255), ["Click Effect Color"] = Color3.fromRGB(230, 230, 230), ["Setting Icon Color"] = Color3.fromRGB(230, 230, 230), ["Logo Image"] = "rbxassetid://6248942117", ["Search Icon Color"] = Color3.fromRGB(255, 255, 255), ["Search Icon Highlight Color"] = Color3.fromRGB(131, 181, 255), ["GUI Text Color"] = Color3.fromRGB(230, 230, 230), ["Text Color"] = Color3.fromRGB(230, 230, 230), ["Placeholder Text Color"] = Color3.fromRGB(178, 178, 178), ["Title Text Color"] = Color3.fromRGB(131, 181, 255), ["Background 1 Color"] = Color3.fromRGB(43, 43, 43), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(90, 90, 90), ["Background 3 Color"] = Color3.fromRGB(53, 53, 53), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(131, 181, 255), ["Section Text Color"] = Color3.fromRGB(131, 181, 255), ["Section Underline Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Border Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Checked Color"] = Color3.fromRGB(230, 230, 230), ["Toggle Desc Color"] = Color3.fromRGB(185, 185, 185), ["Button Color"] = Color3.fromRGB(131, 181, 255), ["Label Color"] = Color3.fromRGB(101, 152, 220), ["Dropdown Icon Color"] = Color3.fromRGB(230, 230, 230), ["Dropdown Selected Color"] = Color3.fromRGB(131, 181, 255), ["Textbox Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Box Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Slider Line Color"] = Color3.fromRGB(75, 75, 75), ["Slider Highlight Color"] = Color3.fromRGB(59, 82, 115), ["Tween Easing Style"] = "Quad", ["Tween Easing Direction"] = "Out", ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
-    local ThemeDefaultDark = { ["Border Color"] = Color3.fromRGB(40, 40, 40), ["Click Effect Color"] = Color3.fromRGB(60, 60, 60), ["Setting Icon Color"] = Color3.fromRGB(200, 200, 200), ["Logo Image"] = "rbxassetid://9327507243", ["Search Icon Color"] = Color3.fromRGB(200, 200, 200), ["Search Icon Highlight Color"] = Color3.fromRGB(90, 160, 255), ["GUI Text Color"] = Color3.fromRGB(220, 220, 220), ["Text Color"] = Color3.fromRGB(220, 220, 220), ["Placeholder Text Color"] = Color3.fromRGB(150, 150, 150), ["Title Text Color"] = Color3.fromRGB(90, 160, 255), ["Background Main Color"] = Color3.fromRGB(20, 20, 20), ["Background 1 Color"] = Color3.fromRGB(30, 30, 30), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(45, 45, 45), ["Background 3 Color"] = Color3.fromRGB(25, 25, 25), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(90, 160, 255), ["Section Text Color"] = Color3.fromRGB(90, 160, 255), ["Section Underline Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Border Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Checked Color"] = Color3.fromRGB(220, 220, 220), ["Toggle Desc Color"] = Color3.fromRGB(180, 180, 180), ["Button Color"] = Color3.fromRGB(90, 160, 255), ["Label Color"] = Color3.fromRGB(90, 160, 255), ["Dropdown Icon Color"] = Color3.fromRGB(200, 200, 200), ["Dropdown Selected Color"] = Color3.fromRGB(90, 160, 255), ["Textbox Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Box Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Slider Line Color"] = Color3.fromRGB(60, 60, 60), ["Slider Highlight Color"] = Color3.fromRGB(70, 130, 200), ["Tween Easing Style"] = "Quad", ["Tween Easing Direction"] = "Out", ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
+    local ThemeDefaultLight = { ["Border Color"] = Color3.fromRGB(131, 181, 255), ["Click Effect Color"] = Color3.fromRGB(230, 230, 230), ["Setting Icon Color"] = Color3.fromRGB(230, 230, 230), ["Logo Image"] = CacheAsset("rbxassetid://6248942117"), ["Search Icon Color"] = Color3.fromRGB(255, 255, 255), ["Search Icon Highlight Color"] = Color3.fromRGB(131, 181, 255), ["GUI Text Color"] = Color3.fromRGB(230, 230, 230), ["Text Color"] = Color3.fromRGB(230, 230, 230), ["Placeholder Text Color"] = Color3.fromRGB(178, 178, 178), ["Title Text Color"] = Color3.fromRGB(131, 181, 255), ["Background 1 Color"] = Color3.fromRGB(43, 43, 43), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(90, 90, 90), ["Background 3 Color"] = Color3.fromRGB(53, 53, 53), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(131, 181, 255), ["Section Text Color"] = Color3.fromRGB(131, 181, 255), ["Section Underline Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Border Color"] = Color3.fromRGB(131, 181, 255), ["Toggle Checked Color"] = Color3.fromRGB(230, 230, 230), ["Toggle Desc Color"] = Color3.fromRGB(185, 185, 185), ["Button Color"] = Color3.fromRGB(131, 181, 255), ["Label Color"] = Color3.fromRGB(101, 152, 220), ["Dropdown Icon Color"] = Color3.fromRGB(230, 230, 230), ["Dropdown Selected Color"] = Color3.fromRGB(131, 181, 255), ["Textbox Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Box Highlight Color"] = Color3.fromRGB(131, 181, 255), ["Slider Line Color"] = Color3.fromRGB(75, 75, 75), ["Slider Highlight Color"] = Color3.fromRGB(59, 82, 115), ["Tween Easing Style"] = "Quad", ["Tween Easing Direction"] = "Out", ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
+    local ThemeDefaultDark = { ["Border Color"] = Color3.fromRGB(40, 40, 40), ["Click Effect Color"] = Color3.fromRGB(60, 60, 60), ["Setting Icon Color"] = Color3.fromRGB(200, 200, 200), ["Logo Image"] = CacheAsset("rbxassetid://9327507243"), ["Search Icon Color"] = Color3.fromRGB(200, 200, 200), ["Search Icon Highlight Color"] = Color3.fromRGB(90, 160, 255), ["GUI Text Color"] = Color3.fromRGB(220, 220, 220), ["Text Color"] = Color3.fromRGB(220, 220, 220), ["Placeholder Text Color"] = Color3.fromRGB(150, 150, 150), ["Title Text Color"] = Color3.fromRGB(90, 160, 255), ["Background Main Color"] = Color3.fromRGB(20, 20, 20), ["Background 1 Color"] = Color3.fromRGB(30, 30, 30), ["Background 1 Transparency"] = 0, ["Background 2 Color"] = Color3.fromRGB(45, 45, 45), ["Background 3 Color"] = Color3.fromRGB(25, 25, 25), ["Background Image"] = "", ["Page Selected Color"] = Color3.fromRGB(90, 160, 255), ["Section Text Color"] = Color3.fromRGB(90, 160, 255), ["Section Underline Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Border Color"] = Color3.fromRGB(90, 160, 255), ["Toggle Checked Color"] = Color3.fromRGB(220, 220, 220), ["Toggle Desc Color"] = Color3.fromRGB(180, 180, 180), ["Button Color"] = Color3.fromRGB(90, 160, 255), ["Label Color"] = Color3.fromRGB(90, 160, 255), ["Dropdown Icon Color"] = Color3.fromRGB(200, 200, 200), ["Dropdown Selected Color"] = Color3.fromRGB(90, 160, 255), ["Textbox Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Box Highlight Color"] = Color3.fromRGB(90, 160, 255), ["Slider Line Color"] = Color3.fromRGB(60, 60, 60), ["Slider Highlight Color"] = Color3.fromRGB(70, 130, 200), ["Tween Easing Style"] = "Quad", ["Tween Easing Direction"] = "Out", ["Tween Animation 1 Speed"] = 0.25, ["Tween Animation 2 Speed"] = 0.5, ["Tween Animation 3 Speed"] = 0.1 };
     local ThemeListeners = {};
     for L_640, L_641 in pairs(ThemeDefaultDark) do
-        
+
         ThemeListeners[L_640] = {};
     end;
-    
+
     local L_642 = {};
     for L_643, L_644 in pairs(ThemeDefaultDark) do
         L_642[L_643] = { Color = L_644, Rainbow = false, Breathing = { Toggle = false, Color1 = Color3.new(), Color2 = Color3.new() } };
@@ -108,7 +168,7 @@ local function BuildLibrary()
     CorrectTable = function(L_647)
         local L_648 = {};
         for L_649, L_650 in pairs(L_647) do
-            
+
             if typeof(L_650) == "Color3" then
                 L_648[L_649] = L_646(L_650);
             elseif type(L_650) == "table" then
@@ -132,24 +192,24 @@ local function BuildLibrary()
         end;
         return L_652;
     end;
-    local L_655 = game:GetService("HttpService");
+    local L_655 = cloneref(game:GetService("HttpService"));
     local L_656 = "!CustomUI.json";
     SaveCustomUISettings = function()
-        local L_657 = game:GetService("HttpService");
-        if not isfolder("Feral") then
-            makefolder("Feral");
+        local L_657 = cloneref(game:GetService("HttpService"));
+        if not isfolder("Austina") then
+            makefolder("Austina");
         end;
-        writefile("Feral/" .. L_656, L_657:JSONEncode(CorrectTable(L_642)));
+        writefile("Austina/" .. L_656, L_657:JSONEncode(CorrectTable(L_642)));
         return ;
     end;
     ReadCustomUISetting = function()
         local L_662, L_663 = pcall(function()
-            local L_658 = game:GetService("HttpService");
-            if not isfolder("Feral") then
-                makefolder("Feral");
+            local L_658 = cloneref(game:GetService("HttpService"));
+            if not isfolder("Austina") then
+                makefolder("Austina");
             end;
-            
-            local L_659 = L_658:JSONDecode(readfile("Feral/" .. L_656));
+
+            local L_659 = L_658:JSONDecode(readfile("Austina/" .. L_656));
             for L_660, L_661 in pairs(L_659) do
                 if not (function()
                     if L_661.Color == nil then
@@ -178,24 +238,24 @@ local function BuildLibrary()
         if L_662 then
             return L_663;
         end;
-        
+
         SaveCustomUISettings();
         return ReadCustomUISetting();
     end;
     local ConfigSystem = {};
-    
-    local ConfigFolder = "Feral/Configs";
+
+    local ConfigFolder = "Austina/Configs";
     local function SetConfigFolder(path)
-        ConfigFolder = tostring(path or "Feral/Configs");
+        ConfigFolder = tostring(path or "Austina/Configs");
         return ConfigFolder;
     end;
     local function GetConfigFolder()
         return ConfigFolder;
     end;
-    
+
     local L_666 = function()
-        if not isfolder("Feral") then
-            makefolder("Feral");
+        if not isfolder("Austina") then
+            makefolder("Austina");
         end;
         if HasFileSystem and not isfolder(ConfigFolder) then
             makefolder(ConfigFolder);
@@ -223,7 +283,7 @@ local function BuildLibrary()
         for L_674, L_675 in pairs(ControlRegistry.Toggles) do
             local L_676, L_677 = pcall(L_675.Get);
             if L_676 then
-                
+
                 L_673.Toggles[L_674] = L_677;
             end;
         end;
@@ -234,7 +294,7 @@ local function BuildLibrary()
             end;
         end;
         for L_682, L_683 in pairs(ControlRegistry.Dropdowns) do
-            
+
             local L_684, L_685 = pcall(L_683.Get);
             if L_684 then
                 L_673.Dropdowns[L_682] = L_685;
@@ -247,13 +307,13 @@ local function BuildLibrary()
             end;
         end;
         for L_690, L_691 in pairs(ControlRegistry.Boxes) do
-            
+
             local L_692, L_693 = pcall(L_691.Get);
             if L_692 then
                 L_673.Boxes[L_690] = L_693;
             end;
         end;
-        
+
         local L_694, L_695 = pcall(function()
             writefile(ConfigFolder .. "/" .. L_672 .. ".json", game.HttpService:JSONEncode(L_673));
             return ;
@@ -262,11 +322,11 @@ local function BuildLibrary()
     end;
     ConfigSystem.Load = function(L_696)
         if not L_696 or L_696 == "" then
-            
+
             return false, "No config name";
         end;
         L_666();
-        
+
         local L_697 = ConfigFolder .. "/" .. L_696 .. ".json";
         if HasFileSystem and not isfile(L_697) then
             return false, "Config not found";
@@ -285,7 +345,7 @@ local function BuildLibrary()
             for L_704, L_705 in pairs(L_703) do
                 local L_706 = L_702 and L_702[L_704];
                 if L_706 and L_706.Set then
-                    
+
                     task.spawn(function()
                         local L_707, L_708 = pcall(L_706.Set, L_705);
                         if not L_707 then
@@ -300,14 +360,14 @@ local function BuildLibrary()
         if L_700.UITheme then
             task.spawn(function()
                 local L_715, L_716 = pcall(function()
-                    
+
                         local L_710 = DCorrectTable(L_700.UITheme);
                         for L_711, L_712 in pairs(L_710) do
                             if type(L_712) == "table" and L_712.Color then
                                 task.spawn(function()
-                                    
+
                                         local L_713, L_714 = pcall(function()
-                                            
+
                                                 getgenv().UIColor[L_711] = L_712.Color;
                                                 return ;
                                         end);
@@ -321,7 +381,7 @@ local function BuildLibrary()
                         return ;
                 end);
                 if not L_715 then
-                    
+
                     warn("[Config] UITheme decoding failed:", L_716);
                 end;
                 return ;
@@ -351,7 +411,7 @@ local function BuildLibrary()
     end;
     ConfigSystem.Delete = function(L_717)
         if not L_717 or L_717 == "" then
-            
+
                 return false, "No config name";
         end;
         L_666();
@@ -365,16 +425,16 @@ local function BuildLibrary()
         end);
         return L_719, L_720;
     end;
-    getgenv().FeralConfig = ConfigSystem;
+    getgenv().AustinaConfig = ConfigSystem;
     if not getgenv().Chon then
-        
+
         L_642 = DCorrectTable(ReadCustomUISetting());
         for L_721, L_722 in pairs(L_642) do
             ThemeDefaultDark[L_721] = L_722.Color;
         end;
     end;
     if not getgenv().ractvkretarddumb then
-        
+
         spawn(function()
             while wait(1) do
                 SaveCustomUISettings();
@@ -386,7 +446,7 @@ local function BuildLibrary()
     local L_729 = setmetatable({}, {
         __newindex = function(L_723, L_724, L_725)
             if L_724 == nil then
-                warn("[Feral UI] UIColor __newindex got nil key, ignoring.");
+                warn("[Austina UI] UIColor __newindex got nil key, ignoring.");
                 return ;
             end;
             rawset(ThemeDefaultDark, L_724, L_725);
@@ -397,7 +457,7 @@ local function BuildLibrary()
                 end;
             end;
             if not L_642[L_724] then
-                
+
                 L_642[L_724] = { Color = L_725, Rainbow = false, Breathing = { Toggle = false, Color1 = Color3.new(), Color2 = Color3.new() } };
             else
                 L_642[L_724].Color = L_725;
@@ -409,8 +469,8 @@ local function BuildLibrary()
     getgenv().UIColor = L_729;
     local SeaUI = {};
     local Internal = {};
-    local TweenService = game:GetService("TweenService");
-    local UserInputService = game:GetService("UserInputService");
+    local TweenService = cloneref(game:GetService("TweenService"));
+    local UserInputService = cloneref(game:GetService("UserInputService"));
 
     -- ------------------------------------------------------------------
     -- Tween easing (ADDITION)
@@ -456,7 +516,7 @@ local function BuildLibrary()
     -- faded, otherwise hiding twice would record "invisible" as the real
     -- value and the UI would never come back.
     -- ------------------------------------------------------------------
-    local RunServiceLocal = game:GetService("RunService");
+    local RunServiceLocal = cloneref(game:GetService("RunService"));
 
     Internal.FadeCache  = {};
     Internal.FadeAlpha  = 0;      -- 0 = fully visible, 1 = fully faded
@@ -595,35 +655,37 @@ local function BuildLibrary()
         return ;
     end;
     Internal.GetIMG = function(L_735)
-        local L_736 = "SynAsset [";
-        local L_737 = "";
+        if not L_735 or L_735 == "" then return "" end
+
+        -- rbxassetid:// -> download + getcustomasset (anti-detection)
         if string.find(L_735, "rbxassetid://") then
-            
-            L_737 = L_735;
-        else
-            pcall(function()
-                
-                    if L_735 and type(L_735) == "string" and tostring(game:HttpGet(L_735)):find("PNG") then
-                        for L_738 = 1, 5, 1 do
-                            L_736 = tostring(L_736 .. string.char(math.random(65, 122)));
-                        end;
-                        L_736 = L_736 .. "].png";
-                        writefile(L_736, game:HttpGet(L_735));
-                        spawn(function()
-                            wait(5);
-                            delfile(L_736);
-                            return ;
-                        end);
-                        L_737 = GetCustomAsset(L_736);
-                    end;
-                    return ;
-            end);
+            return CacheAsset(L_735);
         end;
+
+        -- External URL -> download to temp file + getcustomasset (original behaviour)
+        local L_737 = "";
+        pcall(function()
+            if L_735 and type(L_735) == "string" and tostring(game:HttpGet(L_735)):find("PNG") then
+                local L_736 = "SynAsset [";
+                for L_738 = 1, 5, 1 do
+                    L_736 = tostring(L_736 .. string.char(math.random(65, 122)));
+                end;
+                L_736 = L_736 .. "].png";
+                writefile(L_736, game:HttpGet(L_735));
+                spawn(function()
+                    wait(5);
+                    delfile(L_736);
+                    return ;
+                end);
+                L_737 = GetCustomAsset(L_736);
+            end;
+            return ;
+        end);
         return L_737;
     end;
     Internal.Gui = Instance.new("ScreenGui");
     Internal.Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
-    Internal.Gui.Name = "Feral GUI";
+    Internal.Gui.Name = "Austina GUI";
     getgenv().ReadyForGuiLoaded = false;
     spawn(function()
         Internal.Gui.Enabled = false;
@@ -642,7 +704,7 @@ local function BuildLibrary()
     end);
     Internal.NotiGui = Instance.new("ScreenGui");
     Internal.NotiGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
-    Internal.NotiGui.Name = "Feral Notification";
+    Internal.NotiGui.Name = "Austina Notification";
     local L_739 = Instance.new("Frame");
     local L_740 = Instance.new("UIListLayout");
     L_739.Name = "NotiContainer";
@@ -659,8 +721,8 @@ local function BuildLibrary()
     L_740.Padding = UDim.new(0, 5);
     wait();
     getgenv().GUI = Internal.Gui;
-    Internal.Gui.Parent = game:GetService("CoreGui");
-    Internal.NotiGui.Parent = game:GetService("CoreGui");
+    Internal.Gui.Parent = gethui();
+    Internal.NotiGui.Parent = gethui();
     Internal.Getcolor = function(L_803)
         return { math.floor(L_803.r * 255), math.floor(L_803.g * 255), math.floor(L_803.b * 255) };
     end;
@@ -719,9 +781,9 @@ local function BuildLibrary()
         L_812.CornerRadius = UDim.new(1, 0);
         L_812.Name = "RuafimgCorner";
         L_812.Parent = L_811;
-        L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().TitleNameNoti;
+        L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().TitleNameNoti;
         table.insert(ThemeListeners["Title Text Color"], function()
-            L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().TitleNameNoti;
+            L_813.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().TitleNameNoti;
             return ;
         end);
         L_813.Name = "TextLabelNoti";
@@ -752,7 +814,7 @@ local function BuildLibrary()
         L_815.BackgroundColor3 = Color3.fromRGB(230, 230, 230);
         L_815.BackgroundTransparency = 1;
         L_815.Size = UDim2.new(1, 0, 1, 0);
-        L_815.Image = "rbxassetid://3926305904";
+        L_815.Image = CacheAsset("rbxassetid://3926305904");
         L_815.ImageRectOffset = Vector2.new(284, 4);
         L_815.ImageRectSize = Vector2.new(24, 24);
         L_815.ImageColor3 = getgenv().UIColor["Search Icon Color"];
@@ -820,12 +882,12 @@ local function BuildLibrary()
         return ;
     end;
     SeaUI.CreateMain = function(L_819)
-        local L_820 = tostring(L_819.Title) or "Feral";
-        -- ADDITION: the brand word beside the logo was a hardcoded "Feral"
+        local L_820 = tostring(L_819.Title) or "Austina";
+        -- ADDITION: the brand word beside the logo was a hardcoded "Austina"
         -- string literal in five places. It is now driven by this field.
         -- Title = the sidebar header. Name = the brand. Desc = the text
         -- printed after the brand (version string, sea name, etc).
-        getgenv().HubName = L_819.Name or getgenv().HubName or "Feral";
+        getgenv().HubName = L_819.Name or getgenv().HubName or "Austina";
         getgenv().MainDesc = L_819.Desc or "";
         local L_821 = false;
         cac = false;
@@ -904,7 +966,7 @@ local function BuildLibrary()
         L_834.Position = UDim2.new(0.5, 0, 0.5, 0);
         L_834.Selectable = true;
         L_834.Size = UDim2.new(1, 30, 1, 30);
-        L_834.Image = "rbxassetid://8068653048";
+        L_834.Image = CacheAsset("rbxassetid://8068653048");
         L_834.ScaleType = Enum.ScaleType.Slice;
         L_834.SliceCenter = Rect.new(15, 15, 175, 175);
         L_834.SliceScale = 1.3;
@@ -915,10 +977,10 @@ local function BuildLibrary()
         end);
         Internal.ReloadMain = function(L_853)
             L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
+            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().MainDesc;
             table.insert(ThemeListeners["Title Text Color"], function()
                 L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-                L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
+                L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().MainDesc;
                 return ;
             end);
             local L_854 = nil;
@@ -970,10 +1032,10 @@ local function BuildLibrary()
             return ;
         end;
         L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
+        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().MainDesc;
         table.insert(ThemeListeners["Title Text Color"], function()
             L_834.ImageColor3 = getgenv().UIColor["Title Text Color"];
-            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
+            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().MainDesc;
             return ;
         end);
         local L_860 = nil;
@@ -1083,9 +1145,9 @@ local function BuildLibrary()
             L_838.TextColor3 = getgenv().UIColor["GUI Text Color"];
             return ;
         end);
-        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
+        L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().MainDesc;
         table.insert(ThemeListeners["Title Text Color"], function()
-            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Feral") .. "</font> " .. getgenv().MainDesc;
+            L_838.Text = "<font color=\"rgb(" .. (tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[1]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[2]) .. "," .. tostring(Internal.Getcolor(getgenv().UIColor["Title Text Color"])[3])) .. ")\">" .. (getgenv().HubName or "Austina") .. "</font> " .. getgenv().MainDesc;
             return ;
         end);
         L_846.Name = "SettionMain";
@@ -1113,7 +1175,7 @@ local function BuildLibrary()
         L_848.BackgroundTransparency = 1;
         L_848.Position = UDim2.new(0.5, 0, 0.5, 0);
         L_848.Size = UDim2.new(1, -10, 1, -10);
-        L_848.Image = "rbxassetid://7397332215";
+        L_848.Image = CacheAsset("rbxassetid://7397332215");
         L_848.Visible = true;
         L_848.ImageColor3 = getgenv().UIColor["Setting Icon Color"];
         table.insert(ThemeListeners["Setting Icon Color"], function()
@@ -1160,7 +1222,7 @@ local function BuildLibrary()
         -- 2px per edge so the glow renders complete instead of cropped.
         L_864.Size = UDim2.new(1, 4, 1, 4);
         L_864.ZIndex = -1;
-        L_864.Image = "rbxassetid://8068653048";
+        L_864.Image = CacheAsset("rbxassetid://8068653048");
         L_864.ImageColor3 = getgenv().UIColor["Border Color"];
         L_864.ImageTransparency = 0.8;
         L_864.ScaleType = Enum.ScaleType.Slice;
@@ -1312,7 +1374,7 @@ local function BuildLibrary()
         L_874.BackgroundTransparency = 1;
         L_874.Position = UDim2.new(0.5, 0, 0.5, 0);
         L_874.Size = UDim2.new(0, 16, 0, 16);
-        L_874.Image = "rbxassetid://8154282545";
+        L_874.Image = CacheAsset("rbxassetid://8154282545");
         L_874.ImageColor3 = getgenv().UIColor["Search Icon Color"];
         table.insert(ThemeListeners["Search Icon Color"], function()
             L_874.ImageColor3 = getgenv().UIColor["Search Icon Color"];
@@ -1775,7 +1837,7 @@ local function BuildLibrary()
                             L_935.BackgroundTransparency = 1;
                             L_935.Position = UDim2.new(1, -5, 0.5, 0);
                             L_935.Size = UDim2.new(0, 25, 0, 25);
-                            L_935.Image = "rbxassetid://4552505888";
+                            L_935.Image = CacheAsset("rbxassetid://4552505888");
                             L_935.ImageColor3 = getgenv().UIColor["Toggle Border Color"];
                             table.insert(ThemeListeners["Toggle Border Color"], function()
                                 L_935.ImageColor3 = getgenv().UIColor["Toggle Border Color"];
@@ -1787,7 +1849,7 @@ local function BuildLibrary()
                             L_936.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
                             L_936.BackgroundTransparency = 1;
                             L_936.Position = UDim2.new(0, 0, 1, 0);
-                            L_936.Image = "rbxassetid://4555411759";
+                            L_936.Image = CacheAsset("rbxassetid://4555411759");
                             L_936.ImageColor3 = getgenv().UIColor["Toggle Checked Color"];
                             table.insert(ThemeListeners["Toggle Checked Color"], function()
                                 L_936.ImageColor3 = getgenv().UIColor["Toggle Checked Color"];
@@ -1808,7 +1870,7 @@ local function BuildLibrary()
                             L_938.BorderSizePixel = 0;
                             L_938.Position = UDim2.new(0, 10, 0, 40);
                             L_938.Size = UDim2.new(0, 440, 0, 200);
-                            L_938.Image = "rbxassetid://4155801252";
+                            L_938.Image = CacheAsset("rbxassetid://4155801252");
                             L_939.Name = "SelectorColor";
                             L_939.Parent = L_938;
                             L_939.AnchorPoint = Vector2.new(0.5, 0.5);
@@ -1851,7 +1913,7 @@ local function BuildLibrary()
                             L_944.BackgroundTransparency = 1;
                             L_944.Position = UDim2.new(1, -5, 0, 0);
                             L_944.Size = UDim2.new(0, 25, 0, 25);
-                            L_944.Image = "rbxassetid://4552505888";
+                            L_944.Image = CacheAsset("rbxassetid://4552505888");
                             L_944.ImageColor3 = Color3.fromRGB(131, 181, 255);
                             L_944.ImageColor3 = getgenv().UIColor["Toggle Border Color"];
                             table.insert(ThemeListeners["Toggle Border Color"], function()
@@ -1864,7 +1926,7 @@ local function BuildLibrary()
                             L_945.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
                             L_945.BackgroundTransparency = 1;
                             L_945.Position = UDim2.new(0, 0, 1, 0);
-                            L_945.Image = "rbxassetid://4555411759";
+                            L_945.Image = CacheAsset("rbxassetid://4555411759");
                             L_945.ImageColor3 = getgenv().UIColor["Toggle Checked Color"];
                             table.insert(ThemeListeners["Toggle Checked Color"], function()
                                 L_945.ImageColor3 = getgenv().UIColor["Toggle Checked Color"];
@@ -1931,9 +1993,9 @@ local function BuildLibrary()
                                 Internal.ButtonEffect();
                                 return ;
                             end);
-                            local L_957 = game:GetService("UserInputService");
-                            local L_958 = game:GetService("RunService");
-                            local L_959 = game.Players.LocalPlayer:GetMouse();
+                            local L_957 = cloneref(game:GetService("UserInputService"));
+                            local L_958 = cloneref(game:GetService("RunService"));
+                            local L_959 = cloneref(game:GetService("Players")).LocalPlayer:GetMouse();
                             local L_960 = nil;
                             local L_961 = nil;
                             local L_962 = true;
@@ -2492,7 +2554,7 @@ local function BuildLibrary()
                                 TweenService:Create(L_1072, Internal.EasingInfo(getgenv().UIColor["Tween Animation 2 Speed"]), { BackgroundColor3 = getgenv().UIColor["Slider Line Color"] }):Play();
                                 return ;
                             end);
-                            local L_1077 = game.Players.LocalPlayer:GetMouse();
+                            local L_1077 = cloneref(game:GetService("Players")).LocalPlayer:GetMouse();
                             if L_1060 then
                                 if L_1060 <= L_1057 then
                                     L_1060 = L_1057;
@@ -2783,7 +2845,7 @@ local function BuildLibrary()
             L_1121.BackgroundTransparency = 1;
             L_1121.Position = UDim2.new(0.5, 0, 0.5, 0);
             L_1121.Size = UDim2.new(0, 16, 0, 16);
-            L_1121.Image = "rbxassetid://8154282545";
+            L_1121.Image = CacheAsset("rbxassetid://8154282545");
             L_1121.ImageColor3 = getgenv().UIColor["Search Icon Color"];
             table.insert(ThemeListeners["Search Icon Color"], function()
                 L_1121.ImageColor3 = getgenv().UIColor["Search Icon Color"];
@@ -3109,7 +3171,7 @@ local function BuildLibrary()
                             L_1171.BackgroundTransparency = 1;
                             L_1171.Position = UDim2.new(1, -5, 0.5, 3);
                             L_1171.Size = UDim2.new(0, 25, 0, 25);
-                            L_1171.Image = "rbxassetid://4552505888";
+                            L_1171.Image = CacheAsset("rbxassetid://4552505888");
                             L_1171.ImageColor3 = getgenv().UIColor["Toggle Border Color"];
                             L_1171.ZIndex = 3;
                             table.insert(ThemeListeners["Toggle Border Color"], function()
@@ -3122,7 +3184,7 @@ local function BuildLibrary()
                             L_1172.BackgroundColor3 = Color3.fromRGB(230, 230, 230);
                             L_1172.BackgroundTransparency = 1;
                             L_1172.Position = UDim2.new(0, 0, 1, 0);
-                            L_1172.Image = "rbxassetid://4555411759";
+                            L_1172.Image = CacheAsset("rbxassetid://4555411759");
                             L_1172.ImageColor3 = getgenv().UIColor["Toggle Checked Color"];
                             L_1172.ZIndex = 3;
                             table.insert(ThemeListeners["Toggle Checked Color"], function()
@@ -3366,7 +3428,7 @@ local function BuildLibrary()
                                     L_1202.Size = UDim2.new(0, 14, 0, 14);
                                     L_1202.Position = UDim2.new(0, 0, 0.5, 0);
                                     L_1202.AnchorPoint = Vector2.new(0, 0.5);
-                                    L_1202.Image = "rbxassetid://7072725342";
+                                    L_1202.Image = CacheAsset("rbxassetid://7072725342");
                                     L_1202.ImageColor3 = Color3.fromRGB(255, 85, 85);
                                     L_1202.ZIndex = 2;
                                     local L_1203 = Instance.new("TextLabel");
@@ -3393,10 +3455,10 @@ local function BuildLibrary()
                                         local L_1207 = RequirementsTracker:Check(L_1205);
                                         L_1206.Met = L_1207;
                                         if L_1207 then
-                                            L_1206.Icon.Image = "rbxassetid://7072706620";
+                                            L_1206.Icon.Image = CacheAsset("rbxassetid://7072706620");
                                             L_1206.Icon.ImageColor3 = Color3.fromRGB(85, 255, 127);
                                         else
-                                            L_1206.Icon.Image = "rbxassetid://7072725342";
+                                            L_1206.Icon.Image = CacheAsset("rbxassetid://7072725342");
                                             L_1206.Icon.ImageColor3 = Color3.fromRGB(255, 85, 85);
                                             L_1204 = false;
                                         end;
@@ -3452,7 +3514,7 @@ local function BuildLibrary()
                                 return ;
                             end);
                             if L_1159 then
-                                local L_1216 = game:GetService("UserInputService");
+                                local L_1216 = cloneref(game:GetService("UserInputService"));
                                 L_1180.MouseButton1Click:Connect(function()
                                     if not L_1210 then
                                         L_1210 = true;
@@ -3795,7 +3857,7 @@ local function BuildLibrary()
                             L_1366.BackgroundTransparency = 1;
                             L_1366.Position = UDim2.new(1, -6, 0.5, 0);
                             L_1366.Size = UDim2.new(0, 15, 0, 15);
-                            L_1366.Image = "rbxassetid://6954383209";
+                            L_1366.Image = CacheAsset("rbxassetid://6954383209");
                             L_1366.ImageColor3 = getgenv().UIColor["Dropdown Icon Color"];
                             table.insert(ThemeListeners["Dropdown Icon Color"], function()
                                 L_1366.ImageColor3 = getgenv().UIColor["Dropdown Icon Color"];
@@ -4291,7 +4353,7 @@ local function BuildLibrary()
                             L_1462.MouseButton1Click:Connect(function()
                                 local L_1464 = nil;
                                 L_1462.Text = "...";
-                                L_1464 = game:GetService("UserInputService").InputBegan:Connect(function(L_1465)
+                                L_1464 = UserInputService.InputBegan:Connect(function(L_1465)
                                     if L_1463[L_1465.UserInputType] then
                                         L_1462.Text = L_1463[L_1465.UserInputType];
                                         spawn(function()
@@ -4314,7 +4376,7 @@ local function BuildLibrary()
                                 end);
                                 return ;
                             end);
-                            game:GetService("UserInputService").InputBegan:Connect(function(L_1466)
+                            UserInputService.InputBegan:Connect(function(L_1466)
                                 if L_1449 == L_1466.UserInputType or L_1449 == L_1466.KeyCode then
                                     L_1451(L_1449);
                                 end;
@@ -4496,9 +4558,9 @@ local function BuildLibrary()
                             local L_1493 = L_1488.Precise or false;
                             local L_1494 = tonumber(L_1488.Default) or 0;
                             local L_1495 = 400;
-                            local L_1496 = game:GetService("UserInputService");
-                            local L_1497 = TweenService or game:GetService("TweenService");
-                            local L_1498 = game.Players.LocalPlayer:GetMouse();
+                            local L_1496 = cloneref(game:GetService("UserInputService"));
+                            local L_1497 = TweenService or cloneref(game:GetService("TweenService"));
+                            local L_1498 = cloneref(game:GetService("Players")).LocalPlayer:GetMouse();
                             local L_1499 = typeof(L_1489) == "function" and L_1489 or function()
                                 return ;
                             end;
@@ -4814,7 +4876,7 @@ local function BuildLibrary()
                             L_1541.MouseButton1Click:Connect(function()
                                 local L_1543 = nil;
                                 L_1541.Text = "...";
-                                L_1543 = game:GetService("UserInputService").InputBegan:Connect(function(L_1544)
+                                L_1543 = UserInputService.InputBegan:Connect(function(L_1544)
                                     if L_1542[L_1544.UserInputType] then
                                         L_1541.Text = L_1542[L_1544.UserInputType];
                                         spawn(function()
@@ -4837,7 +4899,7 @@ local function BuildLibrary()
                                 end);
                                 return ;
                             end);
-                            game:GetService("UserInputService").InputBegan:Connect(function(L_1545)
+                            UserInputService.InputBegan:Connect(function(L_1545)
                                 if L_1531 == L_1545.UserInputType or L_1531 == L_1545.KeyCode then
                                     L_1533(L_1531);
                                 end;
@@ -4954,7 +5016,7 @@ local function BuildLibrary()
     -- listener, which is what rebuilds the rich-text string. Cheaper than a
     -- full ReloadMain, which tears the whole window down.
     SeaUI.SetName = function(name)
-        getgenv().HubName = tostring(name or "Feral");
+        getgenv().HubName = tostring(name or "Austina");
         for _, fn in ipairs(ThemeListeners["Title Text Color"] or {}) do
             pcall(fn);
         end;
